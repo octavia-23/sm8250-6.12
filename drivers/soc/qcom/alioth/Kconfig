@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: GPL-2.0
+menu "Xiaomi Redmi K40 / POCO F3 (Alioth) Hardware Support"
+
+config MACH_XIAOMI_SM8250
+	bool "Xiaomi SM8250 platform support"
+	default y
+	help
+	  Support for Xiaomi smartphones based on Qualcomm SM8250 (Snapdragon 865/870).
+
+config MACH_XIAOMI_ALIOTH
+	bool "Xiaomi Redmi K40 / POCO F3 / Mi 11X (alioth)"
+	depends on MACH_XIAOMI_SM8250
+	default y
+	help
+	  Support for Xiaomi Redmi K40 / POCO F3 / Mi 11X (codename: alioth).
+
+config ALIOTH_AUDIO_TECHPACK
+	bool "Alioth Audio Techpack & Sound card support"
+	depends on MACH_XIAOMI_ALIOTH
+	default y
+	help
+	  Enables Qualcomm Audio Techpack integration including WCD938x codec
+	  and Cirrus Logic CS35L41 smart amplifier for Alioth.
+
+config ALIOTH_DSP_BOOT
+	bool "Alioth Audio/Sensors/Compute DSP boot control"
+	depends on MACH_XIAOMI_ALIOTH
+	default y
+	help
+	  Sysfs and misc device control interface for booting and monitoring
+	  ADSP, CDSP, SLPI, and Modem firmware subsystems on Alioth.
+
+config ALIOTH_MMCX_HOLD
+	bool "Alioth MMCX voltage hold"
+	depends on MACH_XIAOMI_ALIOTH
+	default y
+	help
+	  Ensures memory rail voltage stability during dynamic frequency scaling.
+
+config ALIOTH_RQ_STATS
+	bool "Alioth runqueue statistics"
+	depends on MACH_XIAOMI_ALIOTH
+	default y
+	help
+	  Collects CPU runqueue depth and scheduling load statistics.
+
+config ALIOTH_DEVFREQ_FLOOR
+	bool "Alioth devfreq floor regulator"
+	depends on MACH_XIAOMI_ALIOTH
+	default y
+	help
+	  Enforces minimum devfreq bandwidth and frequency floors for SM8250.
+
+endmenu
