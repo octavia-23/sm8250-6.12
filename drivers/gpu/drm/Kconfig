@@ -421,6 +421,16 @@ source "drivers/gpu/drm/virtio/Kconfig"
 
 source "drivers/gpu/drm/msm/Kconfig"
 
+config DRM_QCOM_SDE
+	bool "Qualcomm Snapdragon Display Engine (SDE) DRM"
+	depends on DRM
+	select DRM_KMS_HELPER
+	select DRM_PANEL
+	default y
+	help
+	  Qualcomm Snapdragon Display Engine (SDE) DRM driver for SM8250/Kona.
+
+
 source "drivers/gpu/drm/fsl-dcu/Kconfig"
 
 source "drivers/gpu/drm/tegra/Kconfig"

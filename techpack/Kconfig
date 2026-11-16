@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: GPL-2.0-only
+menu "Qualcomm Techpack Drivers"
+
+config TECHPACK_AUDIO
+	bool "Qualcomm Technologies, Inc. Audio Techpack"
+	depends on SOUND && SND_SOC
+	default y
+	help
+	  Enable support for Qualcomm SM8250 Kona Audio Techpack (Q6 APR,
+	  Bolero soundwire codecs, WCD938x, CS35L41 smart amplifier).
+
+endmenu
