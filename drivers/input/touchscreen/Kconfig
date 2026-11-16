@@ -1388,4 +1388,14 @@ config TOUCHSCREEN_HIMAX_HX83112B
 	  To compile this driver as a module, choose M here: the
 	  module will be called himax_hx83112b.
 
+config TOUCHSCREEN_FT8756
+	tristate "Focaltech FT8756 SPI touchscreen"
+	depends on SPI_MASTER
+	select REGMAP_SPI
+	help
+	  Say Y here to enable support for Focaltech FT8756 touchscreen
+	  controllers connected via SPI (used on Xiaomi Alioth / POCO F3).
+
+	  If unsure, say N.
+
 endif
