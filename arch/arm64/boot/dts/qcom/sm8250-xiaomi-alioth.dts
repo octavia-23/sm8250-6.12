@@ -3420,7 +3420,7 @@
 			reg = <0x793000 0x1000>;
 		};
 
-		qcom,mdm0 {
+		pil_modem: qcom,mdm0 {
 			#address-cells = <0x00>;
 			#interrupt-cells = <0x01>;
 			cell-index = <0x00>;
@@ -7058,7 +7058,7 @@
 			status = "ok";
 		};
 
-		qcom,lpass@17300000 {
+		pil_adsp: qcom,lpass@17300000 {
 			clock-names = "xo";
 			clocks = <0x15 0x00>;
 			compatible = "qcom,pil-tz-generic";
@@ -7086,7 +7086,7 @@
 			vdd_mx-supply = <0x94>;
 		};
 
-		qcom,turing@8300000 {
+		pil_cdsp: qcom,turing@8300000 {
 			clock-names = "xo";
 			clocks = <0x15 0x00>;
 			compatible = "qcom,pil-tz-generic";
@@ -7779,7 +7779,7 @@
 			reg = <0x146bf720 0x3000>;
 		};
 
-		qcom,ssc@5c00000 {
+		pil_slpi: qcom,ssc@5c00000 {
 			clock-names = "xo";
 			clocks = <0x15 0x00>;
 			compatible = "qcom,pil-tz-generic";
@@ -38042,6 +38042,15 @@
 				qcom,therm-pull-up = <0x64>;
 				qcom,therm-room-temp = <0x109a0>;
 			};
+		};
+
+		alioth_dsp_boot: alioth-dsp-boot {
+			compatible = "xiaomi,alioth-dsp-boot";
+			qcom,adsp = <&pil_adsp>;
+			qcom,cdsp = <&pil_cdsp>;
+			qcom,slpi = <&pil_slpi>;
+			qcom,modem = <&pil_modem>;
+			status = "ok";
 		};
 
 		extcon_usb1 {
