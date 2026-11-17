@@ -320,10 +320,13 @@ int drm_bridge_attach(struct drm_encoder *encoder, struct drm_bridge *bridge,
 	bridge->dev = encoder->dev;
 	bridge->encoder = encoder;
 
-	if (previous)
+	if (previous) {
 		list_add(&bridge->chain_node, &previous->chain_node);
-	else
+	} else {
 		list_add(&bridge->chain_node, &encoder->bridge_chain);
+		if (!encoder->bridge)
+			encoder->bridge = bridge;
+	}
 
 	if (bridge->funcs->attach) {
 		ret = bridge->funcs->attach(bridge, flags);
@@ -383,6 +386,8 @@ void drm_bridge_detach(struct drm_bridge *bridge)
 		bridge->funcs->detach(bridge);
 
 	list_del(&bridge->chain_node);
+	if (bridge->encoder && bridge->encoder->bridge == bridge)
+		bridge->encoder->bridge = NULL;
 	bridge->dev = NULL;
 }
 

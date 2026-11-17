@@ -368,7 +368,6 @@ static void _sde_encoder_pm_qos_add_request(struct drm_encoder *drm_enc,
 	struct pm_qos_request *req;
 	u32 cpu_mask;
 	u32 cpu_dma_latency;
-	int cpu;
 
 	if (!sde_kms->catalog || !sde_kms->catalog->perf.cpu_mask)
 		return;
@@ -1143,7 +1142,6 @@ static int sde_encoder_virt_atomic_check(
 	struct sde_encoder_virt *sde_enc;
 	struct msm_drm_private *priv;
 	struct sde_kms *sde_kms;
-	const struct drm_display_mode *mode;
 	struct drm_display_mode *adj_mode;
 	struct sde_connector *sde_conn = NULL;
 	struct sde_connector_state *sde_conn_state = NULL;
@@ -1163,7 +1161,6 @@ static int sde_encoder_virt_atomic_check(
 
 	priv = drm_enc->dev->dev_private;
 	sde_kms = to_sde_kms(priv->kms);
-	mode = &crtc_state->mode;
 	adj_mode = &crtc_state->adjusted_mode;
 	sde_conn = to_sde_connector(conn_state->connector);
 	sde_conn_state = to_sde_connector_state(conn_state);
@@ -1695,7 +1692,6 @@ static int _sde_encoder_dsc_2_lm_2_enc_1_intf(struct sde_encoder_virt *sde_enc,
 static int _sde_encoder_update_roi(struct drm_encoder *drm_enc)
 {
 	struct sde_encoder_virt *sde_enc;
-	struct drm_connector *drm_conn;
 	struct drm_display_mode *adj_mode;
 	struct sde_rect roi;
 
@@ -3391,14 +3387,12 @@ static void sde_encoder_virt_enable(struct drm_encoder *drm_enc)
 	int i, ret = 0;
 	struct msm_compression_info *comp_info = NULL;
 	struct drm_display_mode *cur_mode = NULL;
-	struct msm_display_info *disp_info;
 
 	if (!drm_enc) {
 		SDE_ERROR("invalid encoder\n");
 		return;
 	}
 	sde_enc = to_sde_encoder_virt(drm_enc);
-	disp_info = &sde_enc->disp_info;
 
 	if (!sde_kms_power_resource_is_enabled(drm_enc->dev)) {
 		SDE_ERROR("power resource is not enabled\n");
@@ -3541,7 +3535,6 @@ static void sde_encoder_virt_disable(struct drm_encoder *drm_enc)
 {
 	struct sde_encoder_virt *sde_enc = NULL;
 	struct msm_drm_private *priv;
-	struct sde_kms *sde_kms;
 	enum sde_intf_mode intf_mode;
 	int i = 0;
 
@@ -3565,7 +3558,6 @@ static void sde_encoder_virt_disable(struct drm_encoder *drm_enc)
 	SDE_DEBUG_ENC(sde_enc, "\n");
 
 	priv = drm_enc->dev->dev_private;
-	sde_kms = to_sde_kms(priv->kms);
 	intf_mode = sde_encoder_get_intf_mode(drm_enc);
 
 	SDE_EVT32(DRMID(drm_enc));
@@ -4239,7 +4231,6 @@ static void _sde_encoder_kickoff_phys(struct sde_encoder_virt *sde_enc)
 	/* don't perform flush/start operations for slave encoders */
 	for (i = 0; i < sde_enc->num_phys_encs; i++) {
 		struct sde_encoder_phys *phys = sde_enc->phys_encs[i];
-		enum sde_rm_topology_name topology = SDE_RM_TOPOLOGY_NONE;
 
 		if (!phys || phys->enable_state == SDE_ENC_DISABLED)
 			continue;
@@ -4247,10 +4238,6 @@ static void _sde_encoder_kickoff_phys(struct sde_encoder_virt *sde_enc)
 		ctl = phys->hw_ctl;
 		if (!ctl)
 			continue;
-
-		if (phys->connector)
-			topology = sde_connector_get_topology_name(
-					phys->connector);
 
 		if (!phys->ops.needs_single_flush ||
 				!phys->ops.needs_single_flush(phys)) {
@@ -5536,7 +5523,6 @@ static int _sde_encoder_init_debugfs(struct drm_encoder *drm_enc)
 {
 	struct sde_encoder_virt *sde_enc;
 	struct msm_drm_private *priv;
-	struct sde_kms *sde_kms;
 	int i;
 
 	static const struct file_operations debugfs_status_fops = {
@@ -5561,7 +5547,6 @@ static int _sde_encoder_init_debugfs(struct drm_encoder *drm_enc)
 
 	sde_enc = to_sde_encoder_virt(drm_enc);
 	priv = drm_enc->dev->dev_private;
-	sde_kms = to_sde_kms(priv->kms);
 
 	snprintf(name, SDE_NAME_SIZE, "encoder%u", drm_enc->base.id);
 

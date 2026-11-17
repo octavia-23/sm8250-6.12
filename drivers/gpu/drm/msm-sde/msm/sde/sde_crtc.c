@@ -1034,7 +1034,7 @@ static int _sde_crtc_check_planes_within_crtc_roi(struct drm_crtc *crtc,
 	struct sde_crtc_state *crtc_state;
 	const struct sde_rect *crtc_roi;
 	const struct drm_plane_state *pstate;
-	struct drm_plane *plane;
+	struct drm_plane *plane = NULL;
 
 	if (!crtc || !state)
 		return -EINVAL;
@@ -1304,7 +1304,6 @@ static void _sde_crtc_set_src_split_order(struct drm_crtc *crtc,
 	struct sde_kms *sde_kms;
 	struct sde_rect left_rect, right_rect;
 	int32_t left_pid, right_pid;
-	int32_t stage;
 	int i;
 
 	sde_kms = _sde_crtc_get_kms(crtc);
@@ -1369,7 +1368,7 @@ static void _sde_crtc_blend_setup_mixer(struct drm_crtc *crtc,
 		struct drm_crtc_state *old_state, struct sde_crtc *sde_crtc,
 		struct sde_crtc_mixer *mixer)
 {
-	struct drm_plane *plane;
+	struct drm_plane *plane = NULL;
 	struct drm_framebuffer *fb;
 	struct drm_plane_state *state;
 	struct sde_crtc_state *cstate;
@@ -1654,7 +1653,7 @@ static void _sde_crtc_blend_setup(struct drm_crtc *crtc,
 int sde_crtc_find_plane_fb_modes(struct drm_crtc *crtc,
 		uint32_t *fb_ns, uint32_t *fb_sec, uint32_t *fb_sec_dir)
 {
-	struct drm_plane *plane;
+	struct drm_plane *plane = NULL;
 	struct sde_plane_state *sde_pstate;
 	uint32_t mode = 0;
 	int rc;
@@ -1700,7 +1699,7 @@ int sde_crtc_find_plane_fb_modes(struct drm_crtc *crtc,
 int sde_crtc_state_find_plane_fb_modes(struct drm_crtc_state *state,
 		uint32_t *fb_ns, uint32_t *fb_sec, uint32_t *fb_sec_dir)
 {
-	struct drm_plane *plane;
+	struct drm_plane *plane = NULL;
 	const struct drm_plane_state *pstate;
 	struct sde_plane_state *sde_pstate;
 	uint32_t mode = 0;
@@ -1822,13 +1821,11 @@ int sde_crtc_get_secure_transition_ops(struct drm_crtc *crtc,
 		struct drm_crtc_state *old_crtc_state,
 		bool old_valid_fb)
 {
-	struct drm_plane *plane;
+	struct drm_plane *plane = NULL;
 	struct drm_encoder *encoder;
-	struct sde_crtc *sde_crtc;
 	struct sde_kms *sde_kms;
 	struct sde_mdss_cfg *catalog;
 	struct sde_kms_smmu_state_data *smmu_state;
-	struct drm_device *dev;
 	uint32_t translation_mode = 0, secure_level;
 	int ops  = 0;
 	bool post_commit = false;
@@ -2061,8 +2058,8 @@ static void _sde_crtc_dest_scaler_setup(struct drm_crtc *crtc)
 	struct sde_crtc_state *cstate;
 	struct sde_hw_mixer *hw_lm;
 	struct sde_hw_ctl *hw_ctl;
-	struct sde_hw_ds *hw_ds;
-	struct sde_hw_ds_cfg *cfg;
+	struct sde_hw_ds *hw_ds = NULL;
+	struct sde_hw_ds_cfg *cfg = NULL;
 	struct sde_kms *kms;
 	u32 op_mode = 0;
 	u32 lm_idx = 0, num_mixers = 0;
@@ -2155,7 +2152,7 @@ static void sde_crtc_frame_event_cb(void *data, u32 event)
 	struct msm_drm_private *priv;
 	struct sde_crtc_frame_event *fevent;
 	struct sde_crtc_frame_event_cb_data *cb_data;
-	struct drm_plane *plane;
+	struct drm_plane *plane = NULL;
 	u32 ubwc_error;
 	unsigned long flags;
 	u32 crtc_id;
@@ -2391,7 +2388,6 @@ static void _sde_crtc_retire_event(struct drm_connector *connector,
 
 static void sde_crtc_frame_event_work(struct kthread_work *work)
 {
-	struct msm_drm_private *priv;
 	struct sde_crtc_frame_event *fevent;
 	struct drm_crtc *crtc;
 	struct sde_crtc *sde_crtc;
@@ -2481,14 +2477,11 @@ static void sde_crtc_frame_event_work(struct kthread_work *work)
 void sde_crtc_complete_commit(struct drm_crtc *crtc,
 		struct drm_crtc_state *old_state)
 {
-	struct sde_crtc *sde_crtc;
-
 	if (!crtc || !crtc->state) {
 		SDE_ERROR("invalid crtc\n");
 		return;
 	}
 
-	sde_crtc = to_sde_crtc(crtc);
 	SDE_EVT32_VERBOSE(DRMID(crtc));
 
 	sde_core_perf_crtc_update(crtc, 0, false);
@@ -2894,8 +2887,8 @@ static int _sde_crtc_check_dest_scaler_data(struct drm_crtc *crtc,
 	struct sde_crtc_state *cstate;
 	struct drm_display_mode *mode;
 	struct sde_kms *kms;
-	struct sde_hw_ds *hw_ds;
-	struct sde_hw_ds_cfg *cfg;
+	struct sde_hw_ds *hw_ds = NULL;
+	struct sde_hw_ds_cfg *cfg = NULL;
 	u32 ret = 0;
 	u32 num_ds_enable = 0, hdisplay = 0;
 	u32 max_in_width = 0, max_out_width = 0;
@@ -3176,8 +3169,9 @@ static void _sde_crtc_setup_lm_bounds(struct drm_crtc *crtc,
 }
 
 static void sde_crtc_atomic_begin(struct drm_crtc *crtc,
-		struct drm_crtc_state *old_state)
+		struct drm_atomic_state *state)
 {
+	struct drm_crtc_state *old_state = drm_atomic_get_old_crtc_state(state, crtc);
 	struct sde_crtc *sde_crtc;
 	struct drm_encoder *encoder;
 	struct drm_device *dev;
@@ -3286,12 +3280,12 @@ end:
 }
 
 static void sde_crtc_atomic_flush(struct drm_crtc *crtc,
-		struct drm_crtc_state *old_crtc_state)
+		struct drm_atomic_state *state)
 {
 	struct drm_encoder *encoder;
 	struct sde_crtc *sde_crtc;
 	struct drm_device *dev;
-	struct drm_plane *plane;
+	struct drm_plane *plane = NULL;
 	struct msm_drm_private *priv;
 	struct msm_drm_thread *event_thread;
 	struct sde_crtc_state *cstate;
@@ -3477,7 +3471,7 @@ static int _sde_crtc_flush_event_thread(struct drm_crtc *crtc)
  */
 static void _sde_crtc_remove_pipe_flush(struct drm_crtc *crtc)
 {
-	struct drm_plane *plane;
+	struct drm_plane *plane = NULL;
 	struct drm_plane_state *state;
 	struct sde_crtc *sde_crtc;
 	struct sde_crtc_mixer *mixer;
@@ -3513,10 +3507,9 @@ int sde_crtc_reset_hw(struct drm_crtc *crtc, struct drm_crtc_state *old_state,
 	bool recovery_events)
 {
 	struct drm_plane *plane_halt[MAX_PLANES];
-	struct drm_plane *plane;
+	struct drm_plane *plane = NULL;
 	struct drm_encoder *encoder;
 	struct sde_crtc *sde_crtc;
-	struct sde_crtc_state *cstate;
 	struct sde_hw_ctl *ctl;
 	signed int i, plane_count;
 	int rc;
@@ -3524,7 +3517,6 @@ int sde_crtc_reset_hw(struct drm_crtc *crtc, struct drm_crtc_state *old_state,
 	if (!crtc || !crtc->dev || !old_state || !crtc->state)
 		return -EINVAL;
 	sde_crtc = to_sde_crtc(crtc);
-	cstate = to_sde_crtc_state(crtc->state);
 
 	SDE_EVT32(DRMID(crtc), recovery_events, SDE_EVTLOG_FUNC_ENTRY);
 
@@ -3872,7 +3864,7 @@ static void sde_crtc_handle_power_event(u32 event_type, void *arg)
 	struct drm_crtc *crtc = arg;
 	struct sde_crtc *sde_crtc;
 	struct sde_crtc_state *cstate;
-	struct drm_plane *plane;
+	struct drm_plane *plane = NULL;
 	struct drm_encoder *encoder;
 	u32 power_on;
 	unsigned long flags;
@@ -4127,7 +4119,7 @@ static void sde_crtc_disable(struct drm_crtc *crtc)
 }
 
 static void sde_crtc_enable(struct drm_crtc *crtc,
-		struct drm_crtc_state *old_crtc_state)
+		struct drm_atomic_state *state)
 {
 	struct sde_crtc *sde_crtc;
 	struct drm_encoder *encoder;
@@ -4279,7 +4271,7 @@ static int _sde_crtc_check_secure_blend_config(struct drm_crtc *crtc,
 	struct sde_crtc_state *cstate, struct sde_kms *sde_kms,
 	int cnt, int secure, int fb_ns, int fb_sec, int fb_sec_dir)
 {
-	struct drm_plane *plane;
+	struct drm_plane *plane = NULL;
 	int i;
 	struct drm_crtc_state *old_state = crtc->state;
 	struct sde_crtc_state *old_cstate = to_sde_crtc_state(old_state);
@@ -4895,7 +4887,7 @@ static int _sde_crtc_atomic_check_pstates(struct drm_crtc *crtc,
 	struct sde_crtc *sde_crtc;
 	struct sde_crtc_state *cstate;
 	struct sde_kms *kms;
-	struct drm_plane *plane;
+	struct drm_plane *plane = NULL;
 	struct drm_display_mode *mode;
 	int rc = 0, cnt = 0;
 
@@ -4941,12 +4933,14 @@ static int _sde_crtc_atomic_check_pstates(struct drm_crtc *crtc,
 }
 
 static int sde_crtc_atomic_check(struct drm_crtc *crtc,
-		struct drm_crtc_state *state)
+		struct drm_atomic_state *atomic_state)
 {
+	struct drm_crtc_state *state = drm_atomic_get_new_crtc_state(atomic_state, crtc);
 	struct drm_device *dev;
 	struct sde_crtc *sde_crtc;
 	struct plane_state *pstates = NULL;
 	struct sde_crtc_state *cstate;
+	struct drm_display_mode *mode;
 	int rc = 0;
 	struct sde_multirect_plane_states *multirect_plane = NULL;
 	struct drm_connector *conn;
@@ -5296,7 +5290,6 @@ static void sde_crtc_install_properties(struct drm_crtc *crtc,
 				struct sde_mdss_cfg *catalog)
 {
 	struct sde_crtc *sde_crtc;
-	struct drm_device *dev;
 	struct sde_kms_info *info;
 	struct sde_kms *sde_kms;
 	int i, j;
@@ -5924,7 +5917,7 @@ static int _sde_debugfs_status_show(struct seq_file *s, void *data)
 	struct sde_crtc_mixer *m;
 
 	struct drm_crtc *crtc;
-	struct drm_plane *plane;
+	struct drm_plane *plane = NULL;
 	struct drm_display_mode *mode;
 	struct drm_framebuffer *fb;
 	struct drm_plane_state *state;
@@ -6236,7 +6229,7 @@ DEFINE_SDE_DEBUGFS_SEQ_FOPS(sde_crtc_debugfs_state);
 static int _sde_debugfs_fence_status_show(struct seq_file *s, void *data)
 {
 	struct drm_crtc *crtc;
-	struct drm_plane *plane;
+	struct drm_plane *plane = NULL;
 	struct drm_connector *conn;
 	struct drm_mode_object *drm_obj;
 	struct sde_crtc *sde_crtc;

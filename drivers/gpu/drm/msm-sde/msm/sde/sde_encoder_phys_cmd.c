@@ -1467,14 +1467,12 @@ static int _sde_encoder_phys_cmd_wait_for_wr_ptr(
 	struct sde_encoder_wait_info wait_info = {0};
 	int ret;
 	bool frame_pending = true;
-	struct sde_hw_ctl *ctl;
 	unsigned long lock_flags;
 
 	if (!phys_enc || !phys_enc->hw_ctl) {
 		SDE_ERROR("invalid argument(s)\n");
 		return -EINVAL;
 	}
-	ctl = phys_enc->hw_ctl;
 
 	wait_info.wq = &phys_enc->pending_kickoff_wq;
 	wait_info.atomic_cnt = &phys_enc->pending_retire_fence_cnt;
@@ -1525,12 +1523,9 @@ static int sde_encoder_phys_cmd_wait_for_tx_complete(
 		struct sde_encoder_phys *phys_enc)
 {
 	int rc;
-	struct sde_encoder_phys_cmd *cmd_enc;
 
 	if (!phys_enc)
 		return -EINVAL;
-
-	cmd_enc = to_sde_encoder_phys_cmd(phys_enc);
 
 	if (!atomic_read(&phys_enc->pending_kickoff_cnt)) {
 		SDE_EVT32(DRMID(phys_enc->parent),

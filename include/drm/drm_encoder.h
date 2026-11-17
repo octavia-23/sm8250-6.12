@@ -182,6 +182,7 @@ struct drm_encoder {
 	 * &drm_connector_state.crtc.
 	 */
 	struct drm_crtc *crtc;
+	struct drm_bridge *bridge;
 
 	/**
 	 * @bridge_chain: Bridges attached to this encoder. Drivers shall not
