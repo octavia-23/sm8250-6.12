@@ -712,7 +712,6 @@ end:
 static bool sde_encoder_phys_vid_wait_dma_trigger(
 		struct sde_encoder_phys *phys_enc)
 {
-	struct sde_encoder_phys_vid *vid_enc;
 	struct sde_hw_intf *intf;
 	struct sde_hw_ctl *ctl;
 	struct intf_status status;
@@ -722,7 +721,6 @@ static bool sde_encoder_phys_vid_wait_dma_trigger(
 		return false;
 	}
 
-	vid_enc = to_sde_encoder_phys_vid(phys_enc);
 	intf = phys_enc->hw_intf;
 	ctl = phys_enc->hw_ctl;
 	if (!phys_enc->hw_intf || !phys_enc->hw_ctl) {
