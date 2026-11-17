@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0 */
-#ifndef _LINUX_RESERVATION_H
-#define _LINUX_RESERVATION_H
+#ifndef _LINUX_RESERVATION_COMPAT_H
+#define _LINUX_RESERVATION_COMPAT_H
 
 #include <linux/dma-resv.h>
 
@@ -15,4 +15,4 @@
 #define reservation_object_wait_timeout_rcu(obj, write, intr, timeout) \
 	dma_resv_wait_timeout(obj, dma_resv_usage_rw(write), intr, timeout)
 
-#endif /* _LINUX_RESERVATION_H */
+#endif /* _LINUX_RESERVATION_COMPAT_H */
