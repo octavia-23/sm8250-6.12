@@ -924,7 +924,6 @@ static int _sde_connector_mi_dimlayer_hbm_fence(struct drm_connector *connector)
 	struct dsi_display *dsi_display;
 	bool skip = false;
 	bool Prepare_Kickoff = false;
-	bool Ready_Kickoff = false;
 	static int skip_frame_count = 0;
 	bool hbm_overlay;
 	static bool last_fod_unlock_success;
@@ -941,7 +940,6 @@ static int _sde_connector_mi_dimlayer_hbm_fence(struct drm_connector *connector)
 
 	c_conn = to_sde_connector(connector);
 	Prepare_Kickoff = get_sde_encoder_virt_prepare_kickoff(connector);
-	Ready_Kickoff = get_sde_encoder_virt_ready_kickoff(connector);
 
 	if (c_conn->connector_type != DRM_MODE_CONNECTOR_DSI)
 		return 0;
@@ -1234,7 +1232,6 @@ end:
 int sde_connector_prepare_commit(struct drm_connector *connector)
 {
 	struct sde_connector *c_conn;
-	struct sde_connector_state *c_state;
 	struct msm_display_conn_params params;
 	int rc;
 
@@ -1244,7 +1241,6 @@ int sde_connector_prepare_commit(struct drm_connector *connector)
 	}
 
 	c_conn = to_sde_connector(connector);
-	c_state = to_sde_connector_state(connector->state);
 	if (!c_conn->display) {
 		SDE_ERROR("invalid connector display\n");
 		return -EINVAL;
@@ -2376,11 +2372,8 @@ static int sde_connector_init_debugfs(struct drm_connector *connector)
 				&sde_connector->esd_status_interval);
 	}
 
-	if (!debugfs_create_bool("fb_kmap", 0600, connector->debugfs_entry,
-			&sde_connector->fb_kmap)) {
-		SDE_ERROR("failed to create connector fb_kmap\n");
-		return -ENOMEM;
-	}
+	debugfs_create_bool("fb_kmap", 0600, connector->debugfs_entry,
+			&sde_connector->fb_kmap);
 
 	if (sde_connector->ops.cmd_transfer) {
 		if (!debugfs_create_file("tx_cmd", 0600,
@@ -2531,8 +2524,9 @@ sde_connector_best_encoder(struct drm_connector *connector)
 
 static struct drm_encoder *
 sde_connector_atomic_best_encoder(struct drm_connector *connector,
-		struct drm_connector_state *connector_state)
+		struct drm_atomic_state *state)
 {
+	struct drm_connector_state *connector_state = drm_atomic_get_new_connector_state(state, connector);
 	struct sde_connector *c_conn;
 	struct drm_encoder *encoder = NULL;
 
@@ -2553,8 +2547,9 @@ sde_connector_atomic_best_encoder(struct drm_connector *connector,
 }
 
 static int sde_connector_atomic_check(struct drm_connector *connector,
-		struct drm_connector_state *new_conn_state)
+		struct drm_atomic_state *state)
 {
+	struct drm_connector_state *new_conn_state = drm_atomic_get_new_connector_state(state, connector);
 	struct sde_connector *c_conn;
 
 	if (!connector) {

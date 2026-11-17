@@ -21,6 +21,7 @@
 
 #include <linux/debugfs.h>
 #include <linux/dma-buf.h>
+#include <drm/drm_blend.h>
 #include <uapi/drm/sde_drm.h>
 #include <uapi/drm/msm_drm_pp.h>
 
@@ -541,7 +542,6 @@ static void _sde_plane_set_ts_prefill(struct drm_plane *plane,
 	struct sde_plane *psde;
 	struct sde_hw_pipe_ts_cfg cfg;
 	struct msm_drm_private *priv;
-	struct sde_kms *sde_kms;
 
 	if (!plane || !plane->dev) {
 		SDE_ERROR("invalid arguments");
@@ -554,7 +554,6 @@ static void _sde_plane_set_ts_prefill(struct drm_plane *plane,
 		return;
 	}
 
-	sde_kms = to_sde_kms(priv->kms);
 	psde = to_sde_plane(plane);
 	if (!psde->pipe_hw) {
 		SDE_ERROR("invalid pipe reference\n");
@@ -626,7 +625,7 @@ int sde_plane_wait_input_fence(struct drm_plane *plane, uint32_t wait_ms)
 
 			switch (rc) {
 			case 0:
-				SDE_ERROR_PLANE(psde, "%ums timeout on %08X fd %d\n",
+				SDE_ERROR_PLANE(psde, "%ums timeout on %08X fd %llu\n",
 						wait_ms, prefix, sde_plane_get_property(pstate,
 						PLANE_PROP_INPUT_FENCE));
 				psde->is_error = true;
@@ -1455,7 +1454,7 @@ static int sde_plane_rot_atomic_check(struct drm_plane *plane,
 	struct drm_plane_state *state)
 {
 	struct sde_plane *psde;
-	struct sde_plane_state *pstate, *old_pstate;
+	struct sde_plane_state *pstate;
 	int ret = 0;
 	u32 rotation;
 
@@ -1466,7 +1465,6 @@ static int sde_plane_rot_atomic_check(struct drm_plane *plane,
 
 	psde = to_sde_plane(plane);
 	pstate = to_sde_plane_state(state);
-	old_pstate = to_sde_plane_state(plane->state);
 
 	/* check inline rotation and simplify the transform */
 	rotation = drm_rotation_simplify(
@@ -2586,7 +2584,7 @@ static int _sde_plane_validate_fb(struct sde_plane *psde,
 		if (!ret && ((fb_ns && (mode != SDE_DRM_FB_NON_SEC)) ||
 			(fb_sec && (mode != SDE_DRM_FB_SEC)) ||
 			(fb_sec_dir && (mode != SDE_DRM_FB_SEC_DIR_TRANS)))) {
-			SDE_ERROR_PLANE(psde, "mode:%d fb:%d flag:0x%x rc:%d\n",
+			SDE_ERROR_PLANE(psde, "mode:%d fb:%d flag:0x%lx rc:%d\n",
 			mode, fb->base.id, flags, ret);
 			SDE_EVT32(psde->base.base.id, fb->base.id, flags,
 			fb_ns, fb_sec, fb_sec_dir, ret, SDE_EVTLOG_ERROR);

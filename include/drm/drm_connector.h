@@ -2121,6 +2121,15 @@ struct drm_connector {
 	 * @hdmi: HDMI-related variable and properties.
 	 */
 	struct drm_connector_hdmi hdmi;
+
+	bool hdr_supported;
+	u32 hdr_plus_app_ver;
+	bool hdr_metadata_type_one;
+	u32 hdr_eotf;
+	u32 hdr_max_luminance;
+	u32 hdr_avg_luminance;
+	u32 hdr_min_luminance;
+	u32 color_enc_fmt;
 };
 
 #define obj_to_connector(x) container_of(x, struct drm_connector, base)

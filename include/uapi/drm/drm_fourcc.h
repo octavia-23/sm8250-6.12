@@ -784,6 +784,9 @@ extern "C" {
  * Entire pixel data buffer is aligned with 4k(bytes).
  */
 #define DRM_FORMAT_MOD_QCOM_COMPRESSED	fourcc_mod_code(QCOM, 1)
+#define DRM_FORMAT_MOD_QCOM_DX		fourcc_mod_code(QCOM, 0x2)
+#define DRM_FORMAT_MOD_QCOM_TIGHT	fourcc_mod_code(QCOM, 0x4)
+#define DRM_FORMAT_MOD_QCOM_TILE	fourcc_mod_code(QCOM, 0x8)
 
 /*
  * Qualcomm Tiled Format

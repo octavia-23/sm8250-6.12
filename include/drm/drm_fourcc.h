@@ -307,6 +307,18 @@ int drm_format_info_plane_height(const struct drm_format_info *info, int height,
 
 const struct drm_format_info *__drm_format_info(u32 format);
 const struct drm_format_info *drm_format_info(u32 format);
+
+static inline int drm_format_horz_chroma_subsampling(uint32_t format)
+{
+	const struct drm_format_info *info = drm_format_info(format);
+	return info ? info->hsub : 1;
+}
+
+static inline int drm_format_vert_chroma_subsampling(uint32_t format)
+{
+	const struct drm_format_info *info = drm_format_info(format);
+	return info ? info->vsub : 1;
+}
 const struct drm_format_info *
 drm_get_format_info(struct drm_device *dev,
 		    const struct drm_mode_fb_cmd2 *mode_cmd);

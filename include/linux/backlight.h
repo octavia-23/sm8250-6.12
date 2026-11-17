@@ -268,6 +268,8 @@ struct backlight_device {
 	 */
 	struct backlight_properties props;
 
+	unsigned int thermal_brightness_limit;
+
 	/**
 	 * @update_lock: The lock used when calling the update_status() operation.
 	 *
