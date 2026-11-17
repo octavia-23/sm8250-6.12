@@ -28,6 +28,7 @@
 #include <linux/of_irq.h>
 #include <linux/dma-buf.h>
 #include <linux/memblock.h>
+#include <linux/pm_qos.h>
 #include <soc/qcom/scm.h>
 
 #include "msm_drv.h"
@@ -3272,22 +3273,14 @@ void sde_kms_update_pm_qos_irq_request(struct sde_kms *sde_kms,
 		u32 cpu_irq_latency;
 
 		req = &sde_kms->pm_qos_irq_req;
-		req->type = PM_QOS_REQ_AFFINE_CORES;
-		req->cpus_affine = sde_kms->irq_cpu_mask;
 		cpu_irq_latency = sde_kms->catalog->perf.cpu_irq_latency;
 
-		if (pm_qos_request_active(req))
-			pm_qos_update_request(req, cpu_irq_latency);
-		else if (!cpumask_empty(&req->cpus_affine)) {
-			/** If request is not active yet and mask is not empty
-			 *  then it needs to be added initially
-			 */
-			pm_qos_add_request(req, PM_QOS_CPU_DMA_LATENCY,
-					cpu_irq_latency);
-		}
-	} else if (!enable && pm_qos_request_active(&sde_kms->pm_qos_irq_req)) {
-		pm_qos_update_request(&sde_kms->pm_qos_irq_req,
-				PM_QOS_DEFAULT_VALUE);
+		if (cpu_latency_qos_request_active(req))
+			cpu_latency_qos_update_request(req, cpu_irq_latency);
+		else
+			cpu_latency_qos_add_request(req, cpu_irq_latency);
+	} else if (!enable && cpu_latency_qos_request_active(&sde_kms->pm_qos_irq_req)) {
+		cpu_latency_qos_remove_request(&sde_kms->pm_qos_irq_req);
 	}
 
 	sde_kms->pm_qos_irq_req_en = enable;
@@ -3870,7 +3863,6 @@ static int sde_kms_hw_init(struct msm_kms *kms)
 	/*
 	 * Support format modifiers for compression etc.
 	 */
-	dev->mode_config.allow_fb_modifiers = true;
 
 	/*
 	 * Handle (re)initializations during power enable
@@ -3911,15 +3903,12 @@ end:
 
 struct msm_kms *sde_kms_init(struct drm_device *dev)
 {
-	struct msm_drm_private *priv;
 	struct sde_kms *sde_kms;
 
 	if (!dev || !dev->dev_private) {
 		SDE_ERROR("drm device node invalid\n");
 		return ERR_PTR(-EINVAL);
 	}
-
-	priv = dev->dev_private;
 
 	sde_kms = kzalloc(sizeof(*sde_kms), GFP_KERNEL);
 	if (!sde_kms) {
@@ -3970,14 +3959,4 @@ int sde_kms_handle_recovery(struct drm_encoder *encoder)
 
 void sde_kms_kickoff_count(struct sde_kms *sde_kms)
 {
-	int i;
-	struct dsi_display *display = NULL;
-
-	if (sde_kms != NULL) {
-		for (i = 0; i < sde_kms->dsi_display_count; ++i) {
-			display = sde_kms->dsi_displays[i];
-		}
-	}
-
-	return;
 }
