@@ -3,7 +3,6 @@ DISPLAY_BASE := $(srctree)/drivers/gpu/drm/msm-sde
 ccflags-y := -I$(srctree)/include/drm -I$(DISPLAY_BASE)/msm -I$(DISPLAY_BASE)/msm/dsi -I$(DISPLAY_BASE)/msm/dp
 ccflags-y += -I$(DISPLAY_BASE)/msm/sde
 ccflags-y += -I$(DISPLAY_BASE)/rotator
-ccflags-y += -I$(srctree)/techpack/display/msm -I$(srctree)/techpack/display/rotator
 
 msm_drm-$(CONFIG_DRM_MSM_DP) += dp/dp_usbpd.o \
 	dp/dp_parser.o \

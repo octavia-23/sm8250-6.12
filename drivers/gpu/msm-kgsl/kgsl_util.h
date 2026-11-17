@@ -280,19 +280,19 @@ static inline int qcom_scm_kgsl_set_smmu_lpac_aperture(
        return -EINVAL;
 }
 
-/**
- * kgsl_get_ddrtype - Type of ddr on the current device
- *
- * Return: ddr type on success or negative error on failure.
- */
-int kgsl_get_ddrtype(void);
-
 static inline void qcom_clk_dump(struct clk *clk, struct regulator *regulator,
 		bool calltrace)
 {
 }
 
 #endif
+
+/**
+ * kgsl_get_ddrtype - Type of ddr on the current device
+ *
+ * Return: ddr type on success or negative error on failure.
+ */
+int kgsl_get_ddrtype(void);
 
 #if IS_ENABLED(CONFIG_QCOM_PAS)
 #include <linux/firmware/qcom/qcom_pas.h>
