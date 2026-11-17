@@ -21,7 +21,9 @@
 
 #include <linux/debugfs.h>
 #include <linux/dma-buf.h>
+#include <linux/vmalloc.h>
 #include <drm/drm_blend.h>
+#include <drm/drm_atomic_helper.h>
 #include <uapi/drm/sde_drm.h>
 #include <uapi/drm/msm_drm_pp.h>
 
@@ -2726,29 +2728,28 @@ modeset_update:
 }
 
 static int sde_plane_atomic_check(struct drm_plane *plane,
-		struct drm_plane_state *state)
+		struct drm_atomic_state *state)
 {
+	struct drm_plane_state *new_plane_state = drm_atomic_get_new_plane_state(state, plane);
 	int ret = 0;
 	struct sde_plane *psde;
-	struct sde_plane_state *pstate;
 
-	if (!plane || !state) {
+	if (!plane || !new_plane_state) {
 		SDE_ERROR("invalid arg(s), plane %d state %d\n",
-				!plane, !state);
+				!plane, !new_plane_state);
 		ret = -EINVAL;
 		goto exit;
 	}
 
 	psde = to_sde_plane(plane);
-	pstate = to_sde_plane_state(state);
 
 	SDE_DEBUG_PLANE(psde, "\n");
 
-	ret = sde_plane_rot_atomic_check(plane, state);
+	ret = sde_plane_rot_atomic_check(plane, new_plane_state);
 	if (ret)
 		goto exit;
 
-	ret = sde_plane_sspp_atomic_check(plane, state);
+	ret = sde_plane_sspp_atomic_check(plane, new_plane_state);
 
 exit:
 	return ret;
@@ -3137,7 +3138,6 @@ static void _sde_plane_update_sharpening(struct sde_plane *psde)
 static void _sde_plane_update_properties(struct drm_plane *plane,
 	struct drm_crtc *crtc, struct drm_framebuffer *fb)
 {
-	uint32_t nplanes;
 	const struct msm_format *msm_fmt;
 	const struct sde_format *fmt;
 	struct sde_plane *psde;
@@ -3161,7 +3161,6 @@ static void _sde_plane_update_properties(struct drm_plane *plane,
 	}
 
 	fmt = to_sde_format(msm_fmt);
-	nplanes = fmt->num_planes;
 
 	/* update secure session flag */
 	if (pstate->dirty & SDE_PLANE_DIRTY_FB_TRANSLATION_MODE)
@@ -3222,7 +3221,6 @@ static int sde_plane_sspp_atomic_update(struct drm_plane *plane,
 	struct sde_plane *psde;
 	struct drm_plane_state *state;
 	struct sde_plane_state *pstate;
-	struct sde_plane_state *old_pstate;
 	struct drm_crtc *crtc;
 	struct drm_framebuffer *fb;
 	int idx;
@@ -3243,8 +3241,6 @@ static int sde_plane_sspp_atomic_update(struct drm_plane *plane,
 	state = plane->state;
 
 	pstate = to_sde_plane_state(state);
-
-	old_pstate = to_sde_plane_state(old_state);
 
 	crtc = state->crtc;
 	fb = state->fb;
@@ -3367,7 +3363,7 @@ int sde_plane_is_fod_layer(const struct drm_plane_state *drm_state)
 	return sde_plane_get_property(pstate, PLANE_PROP_FOD);
 }
 
-static void sde_plane_atomic_update(struct drm_plane *plane,
+static void _sde_plane_atomic_update_internal(struct drm_plane *plane,
 				struct drm_plane_state *old_state)
 {
 	struct sde_plane *psde;
@@ -3404,6 +3400,13 @@ static void sde_plane_atomic_update(struct drm_plane *plane,
 	}
 }
 
+static void sde_plane_atomic_update(struct drm_plane *plane,
+				struct drm_atomic_state *state)
+{
+	struct drm_plane_state *old_state = drm_atomic_get_old_plane_state(state, plane);
+	_sde_plane_atomic_update_internal(plane, old_state);
+}
+
 void sde_plane_restore(struct drm_plane *plane)
 {
 	struct sde_plane *psde;
@@ -3425,7 +3428,7 @@ void sde_plane_restore(struct drm_plane *plane)
 	SDE_DEBUG_PLANE(psde, "\n");
 
 	/* last plane state is same as current state */
-	sde_plane_atomic_update(plane, plane->state);
+	_sde_plane_atomic_update_internal(plane, plane->state);
 }
 
 uint32_t sde_plane_get_mi_layer_info(const struct drm_plane_state *drm_state)

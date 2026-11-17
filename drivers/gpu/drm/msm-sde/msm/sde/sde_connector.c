@@ -13,6 +13,7 @@
 #include "sde_encoder.h"
 #include <linux/backlight.h>
 #include <linux/string.h>
+#include <linux/vmalloc.h>
 #include "dsi_drm.h"
 #include "dsi_defs.h"
 #include "dsi_display.h"
@@ -2799,8 +2800,6 @@ static const struct drm_connector_helper_funcs sde_connector_helper_ops_v2 = {
 static int sde_connector_populate_mode_info(struct drm_connector *conn,
 	struct sde_kms_info *info)
 {
-	struct msm_drm_private *priv;
-	struct sde_kms *sde_kms;
 	struct sde_connector *c_conn = NULL;
 	struct drm_display_mode *mode;
 	struct msm_mode_info mode_info;
@@ -2810,9 +2809,6 @@ static int sde_connector_populate_mode_info(struct drm_connector *conn,
 		SDE_ERROR("invalid arguments\n");
 		return -EINVAL;
 	}
-
-	priv = conn->dev->dev_private;
-	sde_kms = to_sde_kms(priv->kms);
 
 	c_conn = to_sde_connector(conn);
 	if (!c_conn->ops.get_mode_info) {
