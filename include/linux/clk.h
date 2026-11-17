@@ -1230,4 +1230,9 @@ static inline struct clk *of_clk_get_from_provider(struct of_phandle_args *clksp
 }
 #endif
 
+static inline int clk_set_flags(struct clk *clk, unsigned long flags)
+{
+	return 0;
+}
+
 #endif

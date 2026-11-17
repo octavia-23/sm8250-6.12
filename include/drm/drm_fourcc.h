@@ -319,6 +319,12 @@ static inline int drm_format_vert_chroma_subsampling(uint32_t format)
 	const struct drm_format_info *info = drm_format_info(format);
 	return info ? info->vsub : 1;
 }
+
+static inline int drm_format_num_planes(uint32_t format)
+{
+	const struct drm_format_info *info = drm_format_info(format);
+	return info ? info->num_planes : 1;
+}
 const struct drm_format_info *
 drm_get_format_info(struct drm_device *dev,
 		    const struct drm_mode_fb_cmd2 *mode_cmd);

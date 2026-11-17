@@ -112,6 +112,10 @@ ssize_t sized_strscpy(char *, const char *, size_t);
 #define strscpy(dst, src, ...)	\
 	CONCATENATE(__strscpy, COUNT_ARGS(__VA_ARGS__))(dst, src, __VA_ARGS__)
 
+#ifndef strlcpy
+#define strlcpy(dst, src, size) strscpy(dst, src, size)
+#endif
+
 #define sized_strscpy_pad(dest, src, count)	({			\
 	char *__dst = (dest);						\
 	const char *__src = (src);					\
