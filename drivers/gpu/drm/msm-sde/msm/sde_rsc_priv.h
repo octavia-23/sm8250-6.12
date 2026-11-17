@@ -250,4 +250,14 @@ int sde_rsc_hw_register(struct sde_rsc_priv *rsc);
  */
 int sde_rsc_hw_register_v3(struct sde_rsc_priv *rsc);
 
+static inline int rpmh_mode_solver_set(const struct device *dev, bool enable)
+{
+	return 0;
+}
+
+static inline int rpmh_flush(const struct device *dev)
+{
+	return 0;
+}
+
 #endif /* _SDE_RSC_PRIV_H_ */

@@ -480,14 +480,12 @@ static int msm_smmu_probe(struct platform_device *pdev)
 	return 0;
 }
 
-static int msm_smmu_remove(struct platform_device *pdev)
+static void msm_smmu_remove(struct platform_device *pdev)
 {
 	struct msm_smmu_client *client;
 
 	client = platform_get_drvdata(pdev);
 	client->domain_attached = false;
-
-	return 0;
 }
 
 static struct platform_driver msm_smmu_driver = {

@@ -5592,15 +5592,15 @@ end:
 	return rc;
 }
 
-int dsi_display_dev_remove(struct platform_device *pdev)
+void dsi_display_dev_remove(struct platform_device *pdev)
 {
-	int rc = 0i, i = 0;
+	int i = 0;
 	struct dsi_display *display;
 	struct dsi_display_ctrl *ctrl;
 
 	if (!pdev) {
 		DSI_ERR("Invalid device\n");
-		return -EINVAL;
+		return;
 	}
 
 	display = platform_get_drvdata(pdev);
@@ -5624,7 +5624,6 @@ int dsi_display_dev_remove(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, NULL);
 	devm_kfree(&pdev->dev, display);
-	return rc;
 }
 
 int dsi_display_get_num_of_displays(void)

@@ -2203,14 +2203,13 @@ static int msm_pdev_probe(struct platform_device *pdev)
 	return component_master_add_with_match(&pdev->dev, &msm_drm_ops, match);
 }
 
-static int msm_pdev_remove(struct platform_device *pdev)
+static void msm_pdev_remove(struct platform_device *pdev)
 {
 	component_master_del(&pdev->dev, &msm_drm_ops);
 	of_platform_depopulate(&pdev->dev);
 
 	msm_drm_unbind(&pdev->dev);
 	component_master_del(&pdev->dev, &msm_drm_ops);
-	return 0;
 }
 
 static void msm_pdev_shutdown(struct platform_device *pdev)

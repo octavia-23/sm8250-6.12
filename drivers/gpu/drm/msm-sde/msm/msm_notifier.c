@@ -101,15 +101,13 @@ static int msm_notifier_fps_chg_callback(struct notifier_block *nb,
 	return 0;
 }
 
-static int msm_notifier_remove(struct platform_device *pdev)
+static void msm_notifier_remove(struct platform_device *pdev)
 {
 	struct msm_display_fps_info *display;
 	struct notifier_info *info = platform_get_drvdata(pdev);
 
 	list_for_each_entry(display, &active_displays->list, list)
 		drm_panel_notifier_unregister(display->panel, &info->notifier);
-
-	return 0;
 }
 
 static int msm_notifier_probe(struct platform_device *pdev)
