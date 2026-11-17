@@ -108,7 +108,7 @@ static inline int32_t qtee_shmbridge_allocate_shm(size_t size, struct qtee_shm *
 static inline void qtee_shmbridge_free_shm(struct qtee_shm *shm) { }
 #endif
 
-#if IS_ENABLED(CONFIG_QCOM_KGSL_UPSTREAM) && !IS_ENABLED(CONFIG_QCOM_SCM_ADDON)
+#if !IS_ENABLED(CONFIG_QCOM_SCM_ADDON)
 static inline int qcom_scm_io_reset(void)
 {
 	return -EINVAL;
