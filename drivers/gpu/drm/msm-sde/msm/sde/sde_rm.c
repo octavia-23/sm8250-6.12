@@ -884,13 +884,13 @@ static bool _sde_rm_reserve_pp(
 		struct sde_rm_rsvp *rsvp,
 		struct sde_rm_requirements *reqs,
 		const struct sde_lm_cfg *lm_cfg,
-		const struct sde_pingpong_cfg *pp_cfg,
 		struct sde_rm_hw_blk *lm,
 		struct sde_rm_hw_blk **dspp,
 		struct sde_rm_hw_blk **ds,
 		struct sde_rm_hw_blk **pp)
 {
 	struct sde_rm_hw_iter iter;
+	const struct sde_pingpong_cfg *pp_cfg;
 
 	sde_rm_init_hw_iter(&iter, 0, SDE_HW_BLK_PINGPONG);
 	while (_sde_rm_get_hw_locked(rm, &iter)) {
@@ -952,7 +952,6 @@ static bool _sde_rm_check_lm_and_get_connected_blks(
 		struct sde_rm_hw_blk *primary_lm)
 {
 	const struct sde_lm_cfg *lm_cfg = to_sde_hw_mixer(lm->hw)->cap;
-	const struct sde_pingpong_cfg *pp_cfg;
 	bool ret, is_conn_primary, is_conn_secondary;
 	u32 lm_primary_pref, lm_secondary_pref, cwb_pref;
 
@@ -968,7 +967,7 @@ static bool _sde_rm_check_lm_and_get_connected_blks(
 	is_conn_secondary = (reqs->hw_res.display_type ==
 				 SDE_CONNECTOR_SECONDARY) ? true : false;
 
-	SDE_DEBUG("check lm %d: dspp %d ds %d pp %d features %d disp type %d\n",
+	SDE_DEBUG("check lm %d: dspp %d ds %d pp %d features %lu disp type %d\n",
 		 lm_cfg->id, lm_cfg->dspp, lm_cfg->ds, lm_cfg->pingpong,
 		 lm_cfg->features, (int)reqs->hw_res.display_type);
 
@@ -1003,7 +1002,7 @@ static bool _sde_rm_check_lm_and_get_connected_blks(
 	} else if ((!is_conn_primary && lm_primary_pref) ||
 			(!is_conn_secondary && lm_secondary_pref)) {
 		SDE_DEBUG(
-			"display preference is not met. display_type: %d lm_features: %x\n",
+			"display preference is not met. display_type: %d lm_features: %lx\n",
 			(int)reqs->hw_res.display_type, lm_cfg->features);
 		return false;
 	}
@@ -1025,7 +1024,7 @@ static bool _sde_rm_check_lm_and_get_connected_blks(
 		return ret;
 
 	/* Reserve pp */
-	ret = _sde_rm_reserve_pp(rm, rsvp, reqs, lm_cfg, pp_cfg, lm,
+	ret = _sde_rm_reserve_pp(rm, rsvp, reqs, lm_cfg, lm,
 			dspp, ds, pp);
 	if (!ret)
 		return ret;
@@ -1742,9 +1741,7 @@ int sde_rm_cont_splash_res_init(struct msm_drm_private *priv,
 				struct sde_mdss_cfg *cat)
 {
 	struct sde_rm_hw_iter iter_c;
-	int index = 0, ctl_top_cnt;
-	struct sde_kms *sde_kms = NULL;
-	struct sde_hw_mdp *hw_mdp;
+	int index = 0;
 	struct sde_splash_display *splash_display;
 	u8 intf_sel;
 
@@ -1758,15 +1755,10 @@ int sde_rm_cont_splash_res_init(struct msm_drm_private *priv,
 			cat->ctl_count,
 			cat->dsc_count);
 
-	ctl_top_cnt = cat->ctl_count;
-
 	if (!priv->kms) {
 		SDE_ERROR("invalid kms\n");
 		return -EINVAL;
 	}
-	sde_kms = to_sde_kms(priv->kms);
-
-	hw_mdp = sde_rm_get_mdp(rm);
 
 	sde_rm_init_hw_iter(&iter_c, 0, SDE_HW_BLK_CTL);
 	while (_sde_rm_get_hw_locked(rm, &iter_c)
@@ -2017,7 +2009,7 @@ static void _sde_rm_release_rsvp(
 void sde_rm_release(struct sde_rm *rm, struct drm_encoder *enc, bool nxt)
 {
 	struct sde_rm_rsvp *rsvp;
-	struct drm_connector *conn;
+	struct drm_connector *conn = NULL;
 	struct msm_drm_private *priv;
 	struct sde_kms *sde_kms;
 	uint64_t top_ctrl;
