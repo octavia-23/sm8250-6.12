@@ -719,6 +719,11 @@ struct drm_display_info {
 	u32 color_formats;
 
 	/**
+	 * @edid_hdmi_dc_modes: HDMI deep color modes from EDID.
+	 */
+	u32 edid_hdmi_dc_modes;
+
+	/**
 	 * @bus_formats: Pixel data format on the wire, somewhat redundant with
 	 * @color_formats. Array of size @num_bus_formats encoded using
 	 * MEDIA_BUS_FMT\_ defines shared with v4l and media drivers.

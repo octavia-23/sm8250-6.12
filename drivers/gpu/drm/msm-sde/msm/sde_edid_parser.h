@@ -26,6 +26,12 @@
 #define SDE_EXTENDED_TAG 0x07
 
 #define SDE_DRM_MODE_FLAG_FMT_MASK (0x3 << 20)
+#ifndef DRM_MODE_FLAG_SUPPORTS_RGB
+#define DRM_MODE_FLAG_SUPPORTS_RGB (1 << 20)
+#endif
+#ifndef DRM_MODE_FLAG_SUPPORTS_YUV
+#define DRM_MODE_FLAG_SUPPORTS_YUV (1 << 21)
+#endif
 
 enum extended_data_block_types {
 	VIDEO_CAPABILITY_DATA_BLOCK = 0x0,

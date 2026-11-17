@@ -6,7 +6,7 @@
 #ifndef __MSM_HDCP_H
 #define __MSM_HDCP_H
 #include <linux/types.h>
-#include "video/msm_hdmi_hdcp_mgr.h"
+#include <video/msm_hdmi_hdcp_mgr.h>
 
 void msm_hdcp_notify_topology(struct device *dev);
 void msm_hdcp_cache_repeater_topology(struct device *dev,
