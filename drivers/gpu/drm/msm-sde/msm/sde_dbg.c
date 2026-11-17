@@ -13,6 +13,7 @@
 #include <linux/uaccess.h>
 #include <linux/dma-buf.h>
 #include <linux/slab.h>
+#include <linux/vmalloc.h>
 #include <linux/list_sort.h>
 #include <linux/pm.h>
 #include <linux/pm_runtime.h>
@@ -3080,8 +3081,8 @@ static u32 _sde_dbg_get_reg_dump_size(void)
 	return size;
 }
 
-static int _sde_dump_reg_range_cmp(void *priv, struct list_head *a,
-		struct list_head *b)
+static int _sde_dump_reg_range_cmp(void *priv, const struct list_head *a,
+		const struct list_head *b)
 {
 	struct sde_dbg_reg_range *ar, *br;
 

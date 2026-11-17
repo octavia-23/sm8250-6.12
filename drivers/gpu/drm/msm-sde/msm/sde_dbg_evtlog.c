@@ -13,6 +13,7 @@
 #include <linux/uaccess.h>
 #include <linux/dma-buf.h>
 #include <linux/slab.h>
+#include <linux/vmalloc.h>
 #include <linux/sched/clock.h>
 
 #include "sde_dbg.h"
