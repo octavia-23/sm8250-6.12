@@ -78,6 +78,9 @@ arch/nios2/include/uapi/asm/swab.h:CONFIG_NIOS2_CI_SWAB_NO
 arch/nios2/include/uapi/asm/swab.h:CONFIG_NIOS2_CI_SWAB_SUPPORT
 arch/x86/include/uapi/asm/auxvec.h:CONFIG_IA32_EMULATION
 arch/x86/include/uapi/asm/auxvec.h:CONFIG_X86_64
+include/uapi/sound/audio_effects.h:CONFIG_CACHE
+include/uapi/sound/audio_effects.h:CONFIG_SET
+include/uapi/sound/audio_effects.h:CONFIG_GET
 "
 
 for c in $configs
