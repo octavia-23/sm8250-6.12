@@ -8,6 +8,7 @@
 
 #include <linux/dma-buf.h>
 #include <linux/string.h>
+#include <linux/vmalloc.h>
 #include <drm/msm_drm_pp.h>
 #include "sde_color_processing.h"
 #include "sde_kms.h"
@@ -280,24 +281,14 @@ static int set_dspp_pcc_feature(struct sde_hw_dspp *hw_dspp,
 				struct sde_crtc *hw_crtc)
 {
 	int ret = 0;
-	struct drm_msm_pcc *pcc_cfg;
 
 	if (!hw_dspp || !hw_dspp->ops.setup_pcc)
 		ret = -EINVAL;
 	else {
-
-		if (hw_cfg->payload) {
-			pcc_cfg = hw_cfg->payload;
-		}
-
 		if (hw_crtc->mi_dimlayer_type & MI_DIMLAYER_FOD_HBM_OVERLAY) {
 			sde_dspp_clear_pcc(hw_cfg);
 		} else {
 			hw_cfg->payload_clear = NULL;
-		}
-
-		if (hw_cfg->payload_clear) {
-			pcc_cfg = hw_cfg->payload_clear;
 		}
 
 		hw_dspp->ops.setup_pcc(hw_dspp, hw_cfg);
@@ -2495,7 +2486,7 @@ static void dspp_ltm_install_property(struct drm_crtc *crtc)
 	char feature_name[256];
 	struct sde_kms *kms = NULL;
 	struct sde_mdss_cfg *catalog = NULL;
-	u32 version = 0, ltm_sw_fuse = 0;
+	u32 version = 0;
 
 	kms = get_kms(crtc);
 	if (!kms || !kms->hw_sw_fuse) {
@@ -2503,7 +2494,7 @@ static void dspp_ltm_install_property(struct drm_crtc *crtc)
 		return;
 	}
 
-	ltm_sw_fuse = sde_hw_get_ltm_sw_fuse_value(kms->hw_sw_fuse);
+	(void)sde_hw_get_ltm_sw_fuse_value(kms->hw_sw_fuse);
 	catalog = kms->catalog;
 	version = catalog->dspp[0].sblk->ltm.version >> 16;
 	snprintf(feature_name, ARRAY_SIZE(feature_name), "%s%d",
@@ -2863,7 +2854,6 @@ static void sde_cp_notify_ad_event(struct drm_crtc *crtc_drm, void *arg)
 	struct sde_crtc *crtc;
 	struct drm_event event;
 	int i;
-	struct msm_drm_private *priv;
 	struct sde_kms *kms;
 	int ret;
 
@@ -2888,7 +2878,6 @@ static void sde_cp_notify_ad_event(struct drm_crtc *crtc_drm, void *arg)
 		return;
 	}
 
-	priv = kms->dev->dev_private;
 	ret = pm_runtime_get_sync(kms->dev->dev);
 	if (ret < 0) {
 		SDE_ERROR("failed to enable power resource %d\n", ret);

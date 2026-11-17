@@ -255,6 +255,9 @@ struct backlight_properties {
 	 * @scale: The type of the brightness scale.
 	 */
 	enum backlight_scale scale;
+
+	int brightness_clone;
+	int brightness_clone_backup;
 };
 
 /**
@@ -269,6 +272,7 @@ struct backlight_device {
 	struct backlight_properties props;
 
 	unsigned int thermal_brightness_limit;
+	unsigned int thermal_brightness_clone_limit;
 
 	/**
 	 * @update_lock: The lock used when calling the update_status() operation.

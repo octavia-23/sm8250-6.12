@@ -68,7 +68,7 @@ TRACE_EVENT(pll_tracing_mark_write,
 	),
 	TP_fast_assign(
 			__entry->pid = pid;
-			__assign_str(trace_name, name);
+			__assign_str(trace_name);
 			__entry->trace_begin = trace_begin;
 	),
 	TP_printk("%s|%d|%s", __entry->trace_begin ? "B" : "E",
@@ -85,7 +85,7 @@ TRACE_EVENT(mdss_pll_trace_counter,
 	),
 	TP_fast_assign(
 			__entry->pid = current->tgid;
-			__assign_str(counter_name, name);
+			__assign_str(counter_name);
 			__entry->value = value;
 	),
 	TP_printk("%d|%s|%d", __entry->pid,
