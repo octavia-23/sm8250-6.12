@@ -1332,8 +1332,6 @@ static void _sde_crtc_set_src_split_order(struct drm_crtc *crtc,
 			continue;
 		}
 
-		stage = cur_pstate->stage;
-
 		left_pid = prv_pstate->sde_pstate->base.plane->base.id;
 		POPULATE_RECT(&left_rect, prv_pstate->drm_pstate->crtc_x,
 			prv_pstate->drm_pstate->crtc_y,
@@ -1844,10 +1842,8 @@ int sde_crtc_get_secure_transition_ops(struct drm_crtc *crtc,
 	smmu_state->prev_state = smmu_state->state;
 	smmu_state->prev_secure_level = smmu_state->secure_level;
 
-	sde_crtc = to_sde_crtc(crtc);
 	secure_level = sde_crtc_get_secure_level(crtc, crtc->state);
 	catalog = sde_kms->catalog;
-	dev = sde_kms->dev;
 
 	/*
 	 * Loop through encoder list to find out if clone mode is
@@ -2414,7 +2410,6 @@ static void sde_crtc_frame_event_work(struct kthread_work *work)
 		SDE_ERROR("invalid kms handle\n");
 		return;
 	}
-	priv = sde_kms->dev->dev_private;
 	SDE_ATRACE_BEGIN("crtc_frame_event");
 
 	SDE_DEBUG("crtc%d event:%u ts:%lld\n", crtc->base.id, fevent->event,
@@ -4940,7 +4935,6 @@ static int sde_crtc_atomic_check(struct drm_crtc *crtc,
 	struct sde_crtc *sde_crtc;
 	struct plane_state *pstates = NULL;
 	struct sde_crtc_state *cstate;
-	struct drm_display_mode *mode;
 	int rc = 0;
 	struct sde_multirect_plane_states *multirect_plane = NULL;
 	struct drm_connector *conn;
@@ -4973,7 +4967,6 @@ static int sde_crtc_atomic_check(struct drm_crtc *crtc,
 		goto end;
 	}
 
-	mode = &state->adjusted_mode;
 	SDE_DEBUG("%s: check", sde_crtc->name);
 
 	/* force a full mode set if active state changed */
@@ -5318,7 +5311,6 @@ static void sde_crtc_install_properties(struct drm_crtc *crtc,
 	}
 
 	sde_crtc = to_sde_crtc(crtc);
-	dev = crtc->dev;
 	sde_kms = _sde_crtc_get_kms(crtc);
 
 	if (!sde_kms) {
