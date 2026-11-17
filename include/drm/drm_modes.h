@@ -302,6 +302,7 @@ struct drm_display_mode {
 	 */
 	u32 flags;
 	u32 private_flags;
+	int vrefresh;
 
 	/**
 	 * @crtc_clock:

@@ -27,6 +27,18 @@
 #include <drm/drm_crtc_helper.h>
 #include <drm/drm_flip_work.h>
 #include <linux/clk/qcom.h>
+#include <linux/vmalloc.h>
+
+#ifndef LP_DDR4_TYPE
+#define LP_DDR4_TYPE 0x7
+#endif
+
+#ifndef of_fdt_get_ddrtype
+static inline int of_fdt_get_ddrtype(void)
+{
+	return -EINVAL;
+}
+#endif
 
 #include "sde_kms.h"
 #include "sde_hw_lm.h"
@@ -360,7 +372,7 @@ static ssize_t measured_fps_show(struct device *device,
 	fps_int = (uint64_t) sde_crtc->fps_info.measured_fps;
 	fps_decimal = do_div(fps_int, 10);
 	return scnprintf(buf, PAGE_SIZE,
-	"fps: %d.%d duration:%d frame_count:%lld\n", fps_int, fps_decimal,
+	"fps: %llu.%llu duration:%d frame_count:%lld\n", (unsigned long long)fps_int, (unsigned long long)fps_decimal,
 			sde_crtc->fps_info.fps_periodic_duration, frame_count);
 }
 
@@ -3604,7 +3616,6 @@ void sde_crtc_commit_kickoff(struct drm_crtc *crtc,
 	struct drm_encoder *encoder;
 	struct drm_device *dev;
 	struct sde_crtc *sde_crtc;
-	struct msm_drm_private *priv;
 	struct sde_kms *sde_kms;
 	struct sde_crtc_state *cstate;
 	bool is_error = false;
@@ -3626,7 +3637,6 @@ void sde_crtc_commit_kickoff(struct drm_crtc *crtc,
 		return;
 	}
 
-	priv = sde_kms->dev->dev_private;
 	cstate = to_sde_crtc_state(crtc->state);
 
 	/*
@@ -4937,7 +4947,6 @@ static int sde_crtc_atomic_check(struct drm_crtc *crtc,
 	struct sde_crtc *sde_crtc;
 	struct plane_state *pstates = NULL;
 	struct sde_crtc_state *cstate;
-	struct drm_display_mode *mode;
 	int rc = 0;
 	struct sde_multirect_plane_states *multirect_plane = NULL;
 	struct drm_connector *conn;
@@ -5101,7 +5110,6 @@ int sde_crtc_mi_atomic_check(struct sde_crtc *sde_crtc, struct sde_crtc_state *c
 	uint32_t mi_plane;
 
 	uint32_t dim_layer_stage = 0x0;
-	uint32_t mi_aodlayer_index = 0x0;
 	uint32_t mi_iconlayer_index = 0x0;
 	uint32_t mi_pressed_Iconlayer_index = 0x0;
 	bool mi_dimlayer_switch_enable = true;
@@ -5123,7 +5131,6 @@ int sde_crtc_mi_atomic_check(struct sde_crtc *sde_crtc, struct sde_crtc_state *c
 			mi_iconlayer_index = i;
 			break;
 		case MI_LAYER_AOD:
-			mi_aodlayer_index = i;
 			break;
 
 		default:

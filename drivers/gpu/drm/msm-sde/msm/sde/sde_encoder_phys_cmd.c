@@ -878,8 +878,6 @@ end:
 void sde_encoder_phys_cmd_irq_control(struct sde_encoder_phys *phys_enc,
 		bool enable)
 {
-	struct sde_encoder_phys_cmd *cmd_enc;
-
 	if (!phys_enc)
 		return;
 
@@ -890,8 +888,6 @@ void sde_encoder_phys_cmd_irq_control(struct sde_encoder_phys *phys_enc,
 	if (_sde_encoder_phys_is_ppsplit_slave(phys_enc) ||
 			_sde_encoder_phys_is_disabling_ppsplit_slave(phys_enc))
 		return;
-
-	cmd_enc = to_sde_encoder_phys_cmd(phys_enc);
 
 	SDE_EVT32(DRMID(phys_enc->parent), phys_enc->hw_pp->idx - PINGPONG_0,
 			enable, atomic_read(&phys_enc->vblank_refcount));
