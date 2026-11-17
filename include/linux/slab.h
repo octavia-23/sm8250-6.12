@@ -449,6 +449,10 @@ void * __must_check krealloc_noprof(const void *objp, size_t new_size,
 
 void kfree(const void *objp);
 void kfree_sensitive(const void *objp);
+static inline void kzfree(const void *objp)
+{
+	kfree_sensitive(objp);
+}
 size_t __ksize(const void *objp);
 
 DEFINE_FREE(kfree, void *, if (!IS_ERR_OR_NULL(_T)) kfree(_T))

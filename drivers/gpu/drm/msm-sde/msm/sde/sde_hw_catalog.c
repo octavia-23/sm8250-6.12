@@ -3004,7 +3004,7 @@ static int sde_vbif_parse_dt(struct device_node *np,
 	struct sde_prop_value *prop_value = NULL;
 	bool prop_exists[VBIF_PROP_MAX];
 	u32 off_count, vbif_len;
-	struct sde_vbif_cfg *vbif;
+	struct sde_vbif_cfg *vbif = NULL;
 
 	if (!sde_cfg) {
 		SDE_ERROR("invalid argument\n");
@@ -3076,7 +3076,7 @@ static int sde_vbif_parse_dt(struct device_node *np,
 		vbif_len = DEFAULT_SDE_HW_BLOCK_LEN;
 
 	for (i = 0; i < off_count; i++) {
-		rc = _sde_vbif_populate(sde_cfg, vbif, prop_value,
+		rc = _sde_vbif_populate(sde_cfg, sde_cfg->vbif + i, prop_value,
 				prop_count, vbif_len, i);
 		if (rc)
 			goto end;
