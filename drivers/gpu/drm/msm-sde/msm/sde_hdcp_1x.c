@@ -612,7 +612,7 @@ static int sde_hdcp_1x_verify_r0(struct sde_hdcp_1x *hdcp)
 	} else {
 		if (!hdcp->sink_r0_ready) {
 			reinit_completion(&hdcp->sink_r0_available);
-			timeout_count = wait_for_completion_timeout(
+			wait_for_completion_timeout(
 				&hdcp->sink_r0_available, HZ / 2);
 
 			if (hdcp->reauth) {

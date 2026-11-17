@@ -84,13 +84,12 @@ static inline int hdcp2_force_encryption(void *ctx, u32 enable)
 }
 
 static inline int hdcp2_open_stream(void *ctx, u8 vc_payload_id,
-				    u8 stream_number, u8 *stream_type)
+				    u8 stream_number, u32 *stream_handle)
 {
 	return -EINVAL;
 }
 
-static inline int hdcp2_close_stream(void *ctx, u8 vc_payload_id,
-				     u8 stream_number)
+static inline int hdcp2_close_stream(void *ctx, u32 stream_handle)
 {
 	return -EINVAL;
 }

@@ -181,9 +181,11 @@ static int sde_hdcp_2x_get_next_message(struct sde_hdcp_2x_ctrl *hdcp,
 	case SKE_SEND_EKS:
 		if (!hdcp->repeater_flag)
 			return SKE_SEND_TYPE_ID;
+		fallthrough;
 	case SKE_SEND_TYPE_ID:
 		if (!hdcp->repeater_flag)
 			return SKE_SEND_TYPE_ID;
+		fallthrough;
 	case REP_STREAM_READY:
 	case REP_SEND_ACK:
 		if (!hdcp->repeater_flag)
@@ -257,6 +259,7 @@ static void sde_hdcp_2x_adjust_transaction_params(
 	switch (hdcp->last_msg) {
 	case AKE_SEND_CERT:
 		data->transaction_delay = AKE_SEND_CERT_MSG_DELAY;
+		break;
 	case REP_STREAM_READY:
 		break;
 	default:
