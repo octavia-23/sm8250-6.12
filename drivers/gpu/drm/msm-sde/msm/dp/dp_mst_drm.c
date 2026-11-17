@@ -633,7 +633,8 @@ static const struct dp_drm_mst_fw_helper_ops drm_dp_sim_mst_fw_helper_ops = {
 
 /* DP MST Bridge OPs */
 
-static int dp_mst_bridge_attach(struct drm_bridge *dp_bridge)
+static int dp_mst_bridge_attach(struct drm_bridge *dp_bridge,
+				enum drm_bridge_attach_flags flags)
 {
 	struct dp_mst_bridge *bridge;
 
@@ -1068,8 +1069,8 @@ static void dp_mst_bridge_post_disable(struct drm_bridge *drm_bridge)
 }
 
 static void dp_mst_bridge_mode_set(struct drm_bridge *drm_bridge,
-				struct drm_display_mode *mode,
-				struct drm_display_mode *adjusted_mode)
+				const struct drm_display_mode *mode,
+				const struct drm_display_mode *adjusted_mode)
 {
 	struct dp_mst_bridge *bridge;
 	struct dp_mst_bridge_state *dp_bridge_state;
@@ -1161,7 +1162,7 @@ int dp_mst_drm_bridge_init(void *data, struct drm_encoder *encoder)
 
 	priv = dev->dev_private;
 
-	rc = drm_bridge_attach(encoder, &bridge->base, NULL);
+	rc = drm_bridge_attach(encoder, &bridge->base, NULL, 0);
 	if (rc) {
 		DP_ERR("failed to attach bridge, rc=%d\n", rc);
 		goto end;

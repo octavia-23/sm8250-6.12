@@ -558,6 +558,18 @@ static inline void pwm_apply_args(struct pwm_device *pwm)
 	pwm_apply_might_sleep(pwm, &state);
 }
 
+static inline struct pwm_device *devm_of_pwm_get(struct device *dev,
+						 struct device_node *np,
+						 const char *con_id)
+{
+	return devm_fwnode_pwm_get(dev, of_fwnode_handle(np), con_id);
+}
+
+static inline void devm_pwm_put(struct device *dev, struct pwm_device *pwm)
+{
+	pwm_put(pwm);
+}
+
 struct pwm_lookup {
 	struct list_head list;
 	const char *provider;

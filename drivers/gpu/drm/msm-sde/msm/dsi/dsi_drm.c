@@ -6,7 +6,9 @@
 
 #include <drm/drm_atomic_helper.h>
 #include <drm/drm_atomic.h>
+#include <drm/drm_edid.h>
 #include <drm/drm_notifier_mi.h>
+#include <linux/msm_drm_notify.h>
 
 #include "msm_kms.h"
 #include "sde_connector.h"
@@ -160,7 +162,8 @@ void dsi_convert_to_drm_mode(const struct dsi_display_mode *dsi_mode,
 			video_mode ? "vid" : "cmd");
 }
 
-static int dsi_bridge_attach(struct drm_bridge *bridge)
+static int dsi_bridge_attach(struct drm_bridge *bridge,
+			      enum drm_bridge_attach_flags flags)
 {
 	struct dsi_bridge *c_bridge = to_dsi_bridge(bridge);
 
@@ -407,19 +410,19 @@ static void dsi_bridge_post_disable(struct drm_bridge *bridge)
 
 static void prim_panel_off_delayed_work(struct work_struct *work)
 {
-	mutex_lock(&gbridge->base.lock);
+	mutex_lock(&gbridge->lock);
 	if (atomic_read(&prim_panel_is_on)) {
 		dsi_bridge_post_disable(&gbridge->base);
 		__pm_relax(prim_panel_wakelock);
-		mutex_unlock(&gbridge->base.lock);
+		mutex_unlock(&gbridge->lock);
 		return;
 	}
-	mutex_unlock(&gbridge->base.lock);
+	mutex_unlock(&gbridge->lock);
 } // git
 
 static void dsi_bridge_mode_set(struct drm_bridge *bridge,
-				struct drm_display_mode *mode,
-				struct drm_display_mode *adjusted_mode)
+				const struct drm_display_mode *mode,
+				const struct drm_display_mode *adjusted_mode)
 {
 	struct dsi_bridge *c_bridge = to_dsi_bridge(bridge);
 
@@ -1156,16 +1159,14 @@ struct dsi_bridge *dsi_drm_bridge_init(struct dsi_display *display,
 	bridge->base.funcs = &dsi_bridge_ops;
 	bridge->base.encoder = encoder;
 
-	rc = drm_bridge_attach(encoder, &bridge->base, NULL);
+	rc = drm_bridge_attach(encoder, &bridge->base, NULL, 0);
 	if (rc) {
 		DSI_ERR("failed to attach bridge, rc=%d\n", rc);
 		goto error_free_bridge;
 	}
 
 	encoder->bridge = &bridge->base;
-
-	encoder->bridge->is_dsi_drm_bridge = true;
-	mutex_init(&encoder->bridge->lock);
+	mutex_init(&bridge->lock);
 
 	if (display->is_prim_display) {
 		gbridge = bridge;

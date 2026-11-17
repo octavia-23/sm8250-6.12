@@ -7,6 +7,7 @@
 #include <linux/of.h>
 #include <linux/of_gpio.h>
 #include <linux/err.h>
+#include <linux/msm_drm_notify.h>
 #include <drm/drm_notifier_mi.h>
 
 #include "msm_drv.h"
@@ -1642,54 +1643,23 @@ static int dsi_display_debugfs_init(struct dsi_display *display)
 
 		snprintf(name, ARRAY_SIZE(name),
 				"%s_allow_phy_power_off", phy->name);
-		dump_file = debugfs_create_bool(name, 0600, dir,
+		debugfs_create_bool(name, 0600, dir,
 				&phy->allow_phy_power_off);
-		if (IS_ERR_OR_NULL(dump_file)) {
-			rc = PTR_ERR(dump_file);
-			DSI_ERR("[%s] debugfs create %s failed, rc=%d\n",
-			       display->name, name, rc);
-			goto error_remove_dir;
-		}
 
 		snprintf(name, ARRAY_SIZE(name),
 				"%s_regulator_min_datarate_bps", phy->name);
-		dump_file = debugfs_create_u32(name, 0600, dir,
+		debugfs_create_u32(name, 0600, dir,
 				&phy->regulator_min_datarate_bps);
-		if (IS_ERR_OR_NULL(dump_file)) {
-			rc = PTR_ERR(dump_file);
-			DSI_ERR("[%s] debugfs create %s failed, rc=%d\n",
-			       display->name, name, rc);
-			goto error_remove_dir;
-		}
 	}
 
-	if (!debugfs_create_bool("ulps_feature_enable", 0600, dir,
-			&display->panel->ulps_feature_enabled)) {
-		DSI_ERR("[%s] debugfs create ulps feature enable file failed\n",
-		       display->name);
-		goto error_remove_dir;
-	}
-
-	if (!debugfs_create_bool("ulps_suspend_feature_enable", 0600, dir,
-			&display->panel->ulps_suspend_enabled)) {
-		DSI_ERR("[%s] debugfs create ulps-suspend feature enable file failed\n",
-		       display->name);
-		goto error_remove_dir;
-	}
-
-	if (!debugfs_create_bool("ulps_status", 0400, dir,
-			&display->ulps_enabled)) {
-		DSI_ERR("[%s] debugfs create ulps status file failed\n",
-		       display->name);
-		goto error_remove_dir;
-	}
-
-	if (!debugfs_create_u32("clk_gating_config", 0600, dir,
-			&display->clk_gating_config)) {
-		DSI_ERR("[%s] debugfs create clk gating config failed\n",
-		       display->name);
-		goto error_remove_dir;
-	}
+	debugfs_create_bool("ulps_feature_enable", 0600, dir,
+			&display->panel->ulps_feature_enabled);
+	debugfs_create_bool("ulps_suspend_feature_enable", 0600, dir,
+			&display->panel->ulps_suspend_enabled);
+	debugfs_create_bool("ulps_status", 0400, dir,
+			&display->ulps_enabled);
+	debugfs_create_u32("clk_gating_config", 0600, dir,
+			&display->clk_gating_config);
 
 	display->root = dir;
 	dsi_parser_dbg_init(display->parser, dir);
@@ -5782,7 +5752,7 @@ static int dsi_display_drm_ext_atomic_check(struct drm_connector *connector,
 	struct dsi_display *display = disp;
 
 	return display->ext_conn->helper_private->atomic_check(
-			display->ext_conn, c_state);
+			display->ext_conn, c_state->state);
 }
 
 static int dsi_display_ext_get_info(struct drm_connector *connector,
@@ -5900,6 +5870,7 @@ static void dsi_display_drm_ext_adjust_timing(
 
 static enum drm_mode_status dsi_display_drm_ext_bridge_mode_valid(
 		struct drm_bridge *bridge,
+		const struct drm_display_info *info,
 		const struct drm_display_mode *mode)
 {
 	struct dsi_display_ext_bridge *ext_bridge;
@@ -5911,7 +5882,7 @@ static enum drm_mode_status dsi_display_drm_ext_bridge_mode_valid(
 
 	tmp = *mode;
 	dsi_display_drm_ext_adjust_timing(ext_bridge->display, &tmp);
-	return ext_bridge->orig_funcs->mode_valid(bridge, &tmp);
+	return ext_bridge->orig_funcs->mode_valid(bridge, info, &tmp);
 }
 
 static bool dsi_display_drm_ext_bridge_mode_fixup(
@@ -5933,8 +5904,8 @@ static bool dsi_display_drm_ext_bridge_mode_fixup(
 
 static void dsi_display_drm_ext_bridge_mode_set(
 		struct drm_bridge *bridge,
-		struct drm_display_mode *mode,
-		struct drm_display_mode *adjusted_mode)
+		const struct drm_display_mode *mode,
+		const struct drm_display_mode *adjusted_mode)
 {
 	struct dsi_display_ext_bridge *ext_bridge;
 	struct drm_display_mode tmp;
@@ -6095,7 +6066,7 @@ int dsi_display_drm_ext_bridge_init(struct dsi_display *display,
 			ext_bridge->funcs = &ext_bridge_info->bridge_funcs;
 		}
 
-		rc = drm_bridge_attach(encoder, ext_bridge, prev_bridge);
+		rc = drm_bridge_attach(encoder, ext_bridge, prev_bridge, 0);
 		if (rc) {
 			DSI_ERR("[%s] ext brige attach failed, %d\n",
 				display->name, rc);

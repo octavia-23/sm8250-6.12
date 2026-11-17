@@ -8,6 +8,7 @@
 #include <linux/slab.h>
 #include <linux/gpio.h>
 #include <linux/of_gpio.h>
+#include <linux/pinctrl/consumer.h>
 #include <linux/pwm.h>
 #include <video/mipi_display.h>
 
@@ -108,9 +109,7 @@ int dsi_dsc_create_pps_buf_cmd(struct msm_display_dsc_info *dsc, char *buf,
 	char *bp;
 	char data;
 	int i, bpp;
-	char *dbgbp;
 
-	dbgbp = buf;
 	bp = buf;
 	/* First 7 bytes are cmd header */
 	*bp++ = 0x0A;
@@ -763,10 +762,10 @@ int dsi_panel_update_backlight(struct dsi_panel *panel,
 	dsi = &panel->mipi_device;
 	bl = &panel->bl_config;
 
-	if (panel->bl_config.bl_inverted_dbv)
+	if (bl->bl_inverted_dbv)
 		bl_lvl = (((bl_lvl & 0xff) << 8) | (bl_lvl >> 8));
 
-	if (panel->bl_config.bl_dcs_subtype == 0xc2)
+	if (bl->bl_dcs_subtype == 0xc2)
 		rc = dsi_panel_dcs_set_display_brightness_c2(dsi, bl_lvl);
 	else if (panel->mi_cfg.bl_is_big_endian) {
 		if ((!mi_cfg->last_bl_level && bl_lvl) ||
@@ -833,7 +832,7 @@ static int dsi_panel_update_pwm_backlight(struct dsi_panel *panel,
 
 	rc = pwm_config(bl->pwm_bl, duty, period_ns);
 	if (rc) {
-		DSI_ERR("[%s] failed to change pwm config, rc=\n", panel->name,
+		DSI_ERR("[%s] failed to change pwm config, rc=%d\n", panel->name,
 			rc);
 		goto error;
 	}
@@ -847,7 +846,7 @@ static int dsi_panel_update_pwm_backlight(struct dsi_panel *panel,
 	if (!bl->pwm_enabled) {
 		rc = pwm_enable(bl->pwm_bl);
 		if (rc) {
-			DSI_ERR("[%s] failed to enable pwm, rc=\n", panel->name,
+			DSI_ERR("[%s] failed to enable pwm, rc=%d\n", panel->name,
 				rc);
 			goto error;
 		}

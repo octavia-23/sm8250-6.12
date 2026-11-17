@@ -518,10 +518,6 @@ error:
  */
 static int dsi_link_hs_clk_stop(struct dsi_link_hs_clk_info *link_hs_clks)
 {
-	struct dsi_link_clks *l_clks;
-
-	l_clks = container_of(link_hs_clks, struct dsi_link_clks, hs_clks);
-
 	dsi_link_hs_clk_disable(link_hs_clks);
 	dsi_link_hs_clk_unprepare(link_hs_clks);
 

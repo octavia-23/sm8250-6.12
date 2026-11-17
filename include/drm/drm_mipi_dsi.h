@@ -22,6 +22,8 @@ struct drm_dsc_picture_parameter_set;
 #define MIPI_DSI_MSG_USE_LPM	BIT(1)
 /* indicate last command in a batch */
 #define MIPI_DSI_MSG_LASTCOMMAND	BIT(3)
+/* transmit command in unicast mode */
+#define MIPI_DSI_MSG_UNICAST		BIT(4)
 
 /**
  * struct mipi_dsi_msg - read/write DSI buffer
@@ -146,6 +148,13 @@ struct mipi_dsi_host *of_find_mipi_dsi_host_by_node(struct device_node *node);
 #define MIPI_DSI_MODE_LPM		BIT(11)
 /* transmit data ending at the same time for all lanes within one hsync */
 #define MIPI_DSI_HS_PKT_END_ALIGNED	BIT(12)
+
+/* Qualcomm/downstream video mode porch & blanking aliases */
+#define MIPI_DSI_MODE_VIDEO_HFP		MIPI_DSI_MODE_VIDEO_NO_HFP
+#define MIPI_DSI_MODE_VIDEO_HBP		MIPI_DSI_MODE_VIDEO_NO_HBP
+#define MIPI_DSI_MODE_VIDEO_HSA		MIPI_DSI_MODE_VIDEO_NO_HSA
+#define MIPI_DSI_MODE_VIDEO_BLLP	BIT(13)
+#define MIPI_DSI_MODE_VIDEO_EOF_BLLP	BIT(14)
 
 enum mipi_dsi_pixel_format {
 	MIPI_DSI_FMT_RGB888,
@@ -361,6 +370,12 @@ int mipi_dsi_dcs_get_display_brightness(struct mipi_dsi_device *dsi,
 					u16 *brightness);
 int mipi_dsi_dcs_set_display_brightness_large(struct mipi_dsi_device *dsi,
 					     u16 brightness);
+
+static inline int mipi_dsi_dcs_set_display_brightness_big_endian(
+		struct mipi_dsi_device *dsi, u16 brightness)
+{
+	return mipi_dsi_dcs_set_display_brightness_large(dsi, brightness);
+}
 int mipi_dsi_dcs_get_display_brightness_large(struct mipi_dsi_device *dsi,
 					     u16 *brightness);
 

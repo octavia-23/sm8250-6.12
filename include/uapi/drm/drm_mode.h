@@ -82,6 +82,8 @@ extern "C" {
 #define DRM_MODE_FLAG_PIXMUX			(1<<11) /* deprecated */
 #define DRM_MODE_FLAG_DBLCLK			(1<<12)
 #define DRM_MODE_FLAG_CLKDIV2			(1<<13)
+#define DRM_MODE_FLAG_VID_MODE_PANEL		(1<<29)
+#define DRM_MODE_FLAG_CMD_MODE_PANEL		(1<<30)
 #define DRM_MODE_FLAG_SEAMLESS			(1<<31)
  /*
   * When adding a new stereo mode don't forget to adjust DRM_MODE_FLAGS_3D_MAX
