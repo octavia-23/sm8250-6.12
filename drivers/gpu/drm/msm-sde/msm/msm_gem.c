@@ -837,8 +837,8 @@ void msm_gem_describe(struct drm_gem_object *obj, struct seq_file *m)
 {
 	struct msm_gem_object *msm_obj = to_msm_bo(obj);
 	struct reservation_object *robj = msm_obj->resv;
-	struct reservation_object_list *fobj;
 	struct dma_fence *fence;
+	struct dma_resv_iter cursor;
 	struct msm_gem_vma *vma;
 	uint64_t off = drm_vma_node_start(&obj->vma_node);
 	const char *madv;
@@ -869,21 +869,11 @@ void msm_gem_describe(struct drm_gem_object *obj, struct seq_file *m)
 
 	seq_printf(m, " %zu%s\n", obj->size, madv);
 
-	rcu_read_lock();
-	fobj = rcu_dereference(robj->fence);
-	if (fobj) {
-		unsigned int i, shared_count = fobj->shared_count;
-
-		for (i = 0; i < shared_count; i++) {
-			fence = rcu_dereference(fobj->shared[i]);
-			describe_fence(fence, "Shared", m);
-		}
+	dma_resv_iter_begin(&cursor, robj, DMA_RESV_USAGE_READ);
+	dma_resv_for_each_fence_unlocked(&cursor, fence) {
+		describe_fence(fence, "Fence", m);
 	}
-
-	fence = rcu_dereference(robj->fence_excl);
-	if (fence)
-		describe_fence(fence, "Exclusive", m);
-	rcu_read_unlock();
+	dma_resv_iter_end(&cursor);
 
 	mutex_unlock(&msm_obj->lock);
 }

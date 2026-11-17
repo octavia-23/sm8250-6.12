@@ -301,6 +301,7 @@ struct drm_display_mode {
 	 *    right parts.
 	 */
 	u32 flags;
+	u32 private_flags;
 
 	/**
 	 * @crtc_clock:
