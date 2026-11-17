@@ -6,6 +6,7 @@
 #define pr_fmt(fmt)	"[drm:%s:%d] " fmt, __func__, __LINE__
 
 #include <uapi/drm/sde_drm.h>
+#include <drm/drm_edid.h>
 
 #include "msm_kms.h"
 #include "sde_kms.h"
@@ -520,7 +521,6 @@ int sde_wb_config(struct drm_device *drm_dev, void *data,
 				struct drm_file *file_priv)
 {
 	struct sde_drm_wb_cfg *config = data;
-	struct msm_drm_private *priv;
 	struct sde_wb_device *wb_dev = NULL;
 	struct sde_wb_device *curr;
 	struct drm_connector *connector;
@@ -541,8 +541,6 @@ int sde_wb_config(struct drm_device *drm_dev, void *data,
 	connector_id = config->connector_id;
 	count_modes = config->count_modes;
 	modes = config->modes;
-
-	priv = drm_dev->dev_private;
 
 	connector = drm_connector_lookup(drm_dev, file_priv, connector_id);
 	if (!connector) {
@@ -777,14 +775,14 @@ static int sde_wb_probe(struct platform_device *pdev)
  * sde_wb_remove - unload writeback module
  * @pdev:	Pointer to platform device
  */
-static int sde_wb_remove(struct platform_device *pdev)
+static void sde_wb_remove(struct platform_device *pdev)
 {
 	struct sde_wb_device *wb_dev;
 	struct sde_wb_device *curr, *next;
 
 	wb_dev = platform_get_drvdata(pdev);
 	if (!wb_dev)
-		return 0;
+		return;
 
 	SDE_DEBUG("\n");
 
@@ -804,8 +802,6 @@ static int sde_wb_remove(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, NULL);
 	devm_kfree(&pdev->dev, wb_dev);
-
-	return 0;
 }
 
 static const struct of_device_id dt_match[] = {

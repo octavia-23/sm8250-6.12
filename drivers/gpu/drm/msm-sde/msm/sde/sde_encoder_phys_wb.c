@@ -97,7 +97,6 @@ static void sde_encoder_phys_wb_set_qos_remap(
 {
 	struct sde_encoder_phys_wb *wb_enc;
 	struct sde_hw_wb *hw_wb;
-	struct drm_crtc *crtc;
 	struct sde_vbif_set_qos_params qos_params;
 
 	if (!phys_enc || !phys_enc->parent || !phys_enc->parent->crtc) {
@@ -110,8 +109,6 @@ static void sde_encoder_phys_wb_set_qos_remap(
 		SDE_ERROR("invalid crtc");
 		return;
 	}
-
-	crtc = wb_enc->crtc;
 
 	if (!wb_enc->hw_wb || !wb_enc->hw_wb->caps) {
 		SDE_ERROR("invalid writeback hardware\n");
@@ -962,8 +959,8 @@ static void sde_encoder_phys_wb_setup(
 	struct drm_framebuffer *fb;
 	struct sde_rect *wb_roi = &wb_enc->wb_roi;
 
-	SDE_DEBUG("[mode_set:%d,%d,\"%s\",%d,%d]\n",
-			hw_wb->idx - WB_0, mode.base.id, mode.name,
+	SDE_DEBUG("[mode_set:%d,\"%s\",%d,%d]\n",
+			hw_wb->idx - WB_0, mode.name,
 			mode.hdisplay, mode.vdisplay);
 
 	memset(wb_roi, 0, sizeof(struct sde_rect));
@@ -1094,7 +1091,7 @@ static void sde_encoder_phys_wb_irq_ctrl(
 {
 
 	struct sde_encoder_phys_wb *wb_enc = to_sde_encoder_phys_wb(phys);
-	int index = 0, refcount;
+	int index = 0;
 	int ret = 0, pp = 0;
 
 	if (!wb_enc)
@@ -1108,8 +1105,6 @@ static void sde_encoder_phys_wb_irq_ctrl(
 		SDE_ERROR("invalid pingpong index for WB or CWB\n");
 		return;
 	}
-
-	refcount = atomic_read(&phys->wbirq_refcount);
 
 	if (enable && atomic_inc_return(&phys->wbirq_refcount) == 1) {
 		sde_encoder_helper_register_irq(phys, INTR_IDX_WB_DONE);
@@ -1572,7 +1567,6 @@ static void sde_encoder_phys_wb_enable(struct sde_encoder_phys *phys_enc)
 {
 	struct sde_encoder_phys_wb *wb_enc = to_sde_encoder_phys_wb(phys_enc);
 	struct sde_hw_wb *hw_wb = wb_enc->hw_wb;
-	struct drm_device *dev;
 	struct drm_connector *connector;
 
 	SDE_DEBUG("[wb:%d]\n", hw_wb->idx - WB_0);
@@ -1581,7 +1575,6 @@ static void sde_encoder_phys_wb_enable(struct sde_encoder_phys *phys_enc)
 		SDE_ERROR("invalid drm device\n");
 		return;
 	}
-	dev = wb_enc->base.parent->dev;
 
 	/* find associated writeback connector */
 	connector = phys_enc->connector;
@@ -1727,11 +1720,8 @@ static int sde_encoder_phys_wb_init_debugfs(
 	if (!phys_enc || !wb_enc->hw_wb || !debugfs_root)
 		return -EINVAL;
 
-	if (!debugfs_create_u32("wbdone_timeout", 0600,
-			debugfs_root, &wb_enc->wbdone_timeout)) {
-		SDE_ERROR("failed to create debugfs/wbdone_timeout\n");
-		return -ENOMEM;
-	}
+	debugfs_create_u32("wbdone_timeout", 0600,
+			debugfs_root, &wb_enc->wbdone_timeout);
 
 	return 0;
 }
