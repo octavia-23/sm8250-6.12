@@ -63,6 +63,7 @@ void drm_panel_init(struct drm_panel *panel, struct device *dev,
 	INIT_LIST_HEAD(&panel->list);
 	INIT_LIST_HEAD(&panel->followers);
 	mutex_init(&panel->follower_lock);
+	BLOCKING_INIT_NOTIFIER_HEAD(&panel->nh);
 	panel->dev = dev;
 	panel->funcs = funcs;
 	panel->connector_type = connector_type;

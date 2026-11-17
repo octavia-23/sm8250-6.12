@@ -2131,6 +2131,10 @@ struct drm_connector {
 	u32 hdr_min_luminance;
 	u32 color_enc_fmt;
 	struct drm_panel *panel;
+#ifndef DRM_CONNECTOR_MAX_ENCODER
+#define DRM_CONNECTOR_MAX_ENCODER 3
+#endif
+	uint32_t encoder_ids[DRM_CONNECTOR_MAX_ENCODER];
 };
 
 #define obj_to_connector(x) container_of(x, struct drm_connector, base)

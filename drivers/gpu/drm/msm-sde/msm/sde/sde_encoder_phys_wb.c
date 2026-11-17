@@ -692,8 +692,8 @@ static int sde_encoder_phys_wb_atomic_check(
 	int rc;
 	bool clone_mode_curr = false;
 
-	SDE_DEBUG("[atomic_check:%d,%d,\"%s\",%d,%d]\n",
-			hw_wb->idx - WB_0, mode->base.id, mode->name,
+	SDE_DEBUG("[atomic_check:%d,\"%s\",%d,%d]\n",
+			hw_wb->idx - WB_0, mode->name,
 			mode->hdisplay, mode->vdisplay);
 
 	if (!conn_state || !conn_state->connector) {
@@ -1153,8 +1153,8 @@ static void sde_encoder_phys_wb_mode_set(
 	phys_enc->cached_mode = *adj_mode;
 	instance = phys_enc->split_role == ENC_ROLE_SLAVE ? 1 : 0;
 
-	SDE_DEBUG("[mode_set_cache:%d,%d,\"%s\",%d,%d]\n",
-			hw_wb->idx - WB_0, mode->base.id,
+	SDE_DEBUG("[mode_set_cache:%d,\"%s\",%d,%d]\n",
+			hw_wb->idx - WB_0,
 			mode->name, mode->hdisplay, mode->vdisplay);
 
 	phys_enc->hw_ctl = NULL;

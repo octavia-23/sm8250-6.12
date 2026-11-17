@@ -22,6 +22,7 @@
 #include <drm/drm_crtc.h>
 #include <drm/drm_fixed.h>
 #include <drm/drm_panel.h>
+#include <drm/drm_atomic_uapi.h>
 #include <linux/debugfs.h>
 #include <linux/of_address.h>
 #include <linux/of_irq.h>
@@ -517,7 +518,7 @@ static int _sde_kms_secure_ctrl(struct sde_kms *sde_kms, struct drm_crtc *crtc,
 	if (smmu_state->sui_misr_state == SUI_MISR_ENABLE_REQ) {
 		ret = _sde_kms_sui_misr_ctrl(sde_kms, crtc, true);
 		if (ret) {
-			smmu_state->sui_misr_state == NONE;
+			smmu_state->sui_misr_state = NONE;
 			goto end;
 		}
 	}
@@ -751,7 +752,7 @@ static int _sde_kms_release_splash_buffer(struct sde_kms *sde_kms,
 	pfn_start = mem_addr >> PAGE_SHIFT;
 	pfn_end = (mem_addr + splash_buffer_size) >> PAGE_SHIFT;
 
-	ret = memblock_free(mem_addr, splash_buffer_size);
+	ret = memblock_phys_free(mem_addr, splash_buffer_size);
 	if (ret) {
 		SDE_ERROR("continuous splash memory free failed:%d\n", ret);
 		return ret;
@@ -1166,7 +1167,7 @@ static void sde_kms_complete_commit(struct msm_kms *kms,
 		return;
 	priv = sde_kms->dev->dev_private;
 
-	if (sde_kms_power_resource_is_enabled(sde_kms->dev) < 0) {
+	if (!sde_kms_power_resource_is_enabled(sde_kms->dev)) {
 		SDE_ERROR("power resource is not enabled\n");
 		return;
 	}
@@ -2704,8 +2705,8 @@ static int sde_kms_cont_splash_config(struct msm_kms *kms)
 		/* currently consider modes[0] as the preferred mode */
 		drm_mode = list_first_entry(&connector->modes,
 				struct drm_display_mode, head);
-		SDE_DEBUG("drm_mode->name = %s, id=%d, type=0x%x, flags=0x%x\n",
-				drm_mode->name, drm_mode->base.id,
+		SDE_DEBUG("drm_mode->name = %s, type=0x%x, flags=0x%x\n",
+				drm_mode->name,
 				drm_mode->type, drm_mode->flags);
 
 		/* Update CRTC drm structure */

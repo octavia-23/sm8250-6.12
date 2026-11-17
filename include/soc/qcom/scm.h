@@ -4,6 +4,12 @@
 
 #include <linux/types.h>
 #include <linux/firmware/qcom/qcom_scm.h>
+#include <asm/cacheflush.h>
+
+#ifndef dmac_flush_range
+#define dmac_flush_range(start, end) \
+	dcache_clean_inval_poc((unsigned long)(start), (unsigned long)(end))
+#endif
 
 #define SCM_SVC_BOOT			0x01
 #define SCM_SVC_PIL			0x02

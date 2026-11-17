@@ -28,6 +28,23 @@
 #include <linux/errno.h>
 #include <linux/list.h>
 #include <linux/mutex.h>
+#include <linux/notifier.h>
+
+#define DRM_PANEL_EVENT_BLANK 0x01
+#define DRM_PANEL_EARLY_EVENT_BLANK 0x02
+
+enum {
+	DRM_PANEL_BLANK_UNBLANK,
+	DRM_PANEL_BLANK_POWERDOWN,
+	DRM_PANEL_BLANK_LP,
+	DRM_PANEL_BLANK_FPS_CHANGE,
+};
+
+struct drm_panel_notifier {
+	int refresh_rate;
+	void *data;
+	uint32_t id;
+};
 
 struct backlight_device;
 struct dentry;
@@ -267,7 +284,26 @@ struct drm_panel {
 	 * If true then the panel has been enabled.
 	 */
 	bool enabled;
+	struct blocking_notifier_head nh;
 };
+
+static inline int drm_panel_notifier_register(struct drm_panel *panel,
+				struct notifier_block *nb)
+{
+	return panel ? blocking_notifier_chain_register(&panel->nh, nb) : -EINVAL;
+}
+
+static inline int drm_panel_notifier_unregister(struct drm_panel *panel,
+				struct notifier_block *nb)
+{
+	return panel ? blocking_notifier_chain_unregister(&panel->nh, nb) : -EINVAL;
+}
+
+static inline int drm_panel_notifier_call_chain(struct drm_panel *panel,
+				unsigned long val, void *v)
+{
+	return panel ? blocking_notifier_call_chain(&panel->nh, val, v) : -EINVAL;
+}
 
 void drm_panel_init(struct drm_panel *panel, struct device *dev,
 		    const struct drm_panel_funcs *funcs,
