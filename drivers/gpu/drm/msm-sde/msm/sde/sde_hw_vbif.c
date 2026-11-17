@@ -103,12 +103,12 @@ static void sde_hw_set_mem_type_v1(struct sde_hw_vbif *vbif,
 	/* disable outer shareable */
 	reg_val = SDE_REG_READ(c, VBIF_OUT_AXI_ASHARED);
 	reg_val &= ~BIT(xin_id);
-	SDE_REG_WRITE(c, VBIF_OUT_AXI_ASHARED, 0);
+	SDE_REG_WRITE(c, VBIF_OUT_AXI_ASHARED, reg_val);
 
 	/* disable inner shareable */
 	reg_val = SDE_REG_READ(c, VBIF_OUT_AXI_AINNERSHARED);
 	reg_val &= ~BIT(xin_id);
-	SDE_REG_WRITE(c, VBIF_OUT_AXI_AINNERSHARED, 0);
+	SDE_REG_WRITE(c, VBIF_OUT_AXI_AINNERSHARED, reg_val);
 }
 
 static void sde_hw_set_limit_conf(struct sde_hw_vbif *vbif,

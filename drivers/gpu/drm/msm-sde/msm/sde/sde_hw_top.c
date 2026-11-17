@@ -532,13 +532,13 @@ static u32 sde_hw_get_autorefresh_status(struct sde_hw_mdp *mdp, u32 intf_idx)
 
 	c = &mdp->hw;
 
-	SDE_REG_WRITE(&mdp->hw, MDP_PERIPH_DBGBUS_CTRL,
+	SDE_REG_WRITE(c, MDP_PERIPH_DBGBUS_CTRL,
 			TEST_MASK(blk_id, AUTOREFRESH_TEST_POINT));
-	SDE_REG_WRITE(&mdp->hw, MDP_DSPP_DBGBUS_CTRL, 0x7001);
+	SDE_REG_WRITE(c, MDP_DSPP_DBGBUS_CTRL, 0x7001);
 	wmb(); /* make sure test bits were written */
 
-	autorefresh_status = SDE_REG_READ(&mdp->hw, MDP_DSPP_DBGBUS_STATUS);
-	SDE_REG_WRITE(&mdp->hw, MDP_PERIPH_DBGBUS_CTRL, 0x0);
+	autorefresh_status = SDE_REG_READ(c, MDP_DSPP_DBGBUS_STATUS);
+	SDE_REG_WRITE(c, MDP_PERIPH_DBGBUS_CTRL, 0x0);
 
 	return autorefresh_status;
 }
