@@ -268,7 +268,6 @@ static inline void kgsl_qcom_va_md_unregister(struct kgsl_device *device)
 }
 #endif
 
-#ifdef CONFIG_QCOM_KGSL_UPSTREAM
 static inline int qcom_scm_pas_shutdown_retry(u32 peripheral)
 {
 	return -EINVAL;
@@ -284,8 +283,6 @@ static inline void qcom_clk_dump(struct clk *clk, struct regulator *regulator,
 		bool calltrace)
 {
 }
-
-#endif
 
 /**
  * kgsl_get_ddrtype - Type of ddr on the current device
