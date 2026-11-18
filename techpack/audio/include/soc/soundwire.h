@@ -20,6 +20,8 @@
 
 extern struct bus_type soundwire_type;
 
+#define SOUNDWIRE_NAME_SIZE	32
+
 /* Soundwire supports max. of 8 channels per port */
 #define SWR_MAX_CHANNEL_NUM	8
 /* Soundwire supports max. of 14 ports on each device */
