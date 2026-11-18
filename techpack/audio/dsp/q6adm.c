@@ -883,11 +883,11 @@ int crus_adm_set_params(int port_id, int copp_idx, uint32_t module_id,
 	int port_idx;
 	int rc  = 0;
 
-	pr_info("[CSPL] %s: config: port_idx %d copp_idx  %d module 0x%d, len=%d\n",
-			__func__, port_idx, copp_idx,module_id, params_length);
-
 	port_id = q6audio_convert_virtual_to_portid(port_id);
 	port_idx = adm_validate_and_get_port_index(port_id);
+
+	pr_info("[CSPL] %s: config: port_idx %d copp_idx  %d module 0x%d, len=%d\n",
+			__func__, port_idx, copp_idx,module_id, params_length);
 
 	if (port_idx < 0) {
 		pr_err("[CSPL] %s: Invalid port_id %#x\n", __func__, port_id);
@@ -1690,6 +1690,7 @@ static int32_t adm_callback(struct apr_client_data *data, void *priv)
 				else if (rtac_make_adm_callback(payload,
 							data->payload_size))
 					break;
+				fallthrough;
 				/*
 				 * if soft volume is called and already
 				 * interrupted break out of the sequence here
@@ -3635,6 +3636,7 @@ static void route_set_opcode_matrix_id(
 			break;
 		}
 		/* fall through to set matrix id for non-listen case */
+		fallthrough;
 	case ADM_PATH_NONLIVE_REC:
 		route->hdr.opcode = ADM_CMD_MATRIX_MAP_ROUTINGS_V5;
 		route->matrix_id = ADM_MATRIX_ID_AUDIO_TX;
