@@ -58,6 +58,9 @@
  * at least read-only at lesser-privileged levels).
  */
 #define DMA_ATTR_PRIVILEGED		(1UL << 9)
+#define DMA_ATTR_EXEC_MAPPING		(1UL << 11)
+#define DMA_ATTR_IOMMU_USE_UPSTREAM_HINT (1UL << 12)
+#define DMA_ATTR_DELAYED_UNMAP		(1UL << 13)
 
 /*
  * A dma_addr_t can hold any valid DMA or bus address for the platform.  It can

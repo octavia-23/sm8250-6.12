@@ -21,6 +21,8 @@
 #include <linux/dma-buf.h>
 #include <linux/pfn_t.h>
 #include <linux/ion.h>
+#include <linux/msm_ion.h>
+#include <linux/vmalloc.h>
 
 #include "msm_drv.h"
 #include "msm_gem.h"
@@ -201,13 +203,8 @@ int msm_gem_mmap_obj(struct drm_gem_object *obj,
 {
 	struct msm_gem_object *msm_obj = to_msm_bo(obj);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
 	vm_flags_clear(vma, VM_PFNMAP);
 	vm_flags_set(vma, VM_MIXEDMAP);
-#else
-	vma->vm_flags &= ~VM_PFNMAP;
-	vma->vm_flags |= VM_MIXEDMAP;
-#endif
 
 	if (msm_obj->flags & MSM_BO_WC) {
 		vma->vm_page_prot = pgprot_writecombine(vm_get_page_prot(vma->vm_flags));
@@ -652,13 +649,17 @@ static void *get_vaddr(struct drm_gem_object *obj, unsigned madv)
 		}
 
 		if (obj->import_attach) {
+			struct iosys_map map;
+
 			ret = dma_buf_begin_cpu_access(
 				obj->import_attach->dmabuf, DMA_BIDIRECTIONAL);
 			if (ret)
 				goto fail;
 
-			msm_obj->vaddr =
-				dma_buf_vmap(obj->import_attach->dmabuf);
+			ret = dma_buf_vmap(obj->import_attach->dmabuf, &map);
+			if (ret)
+				goto fail;
+			msm_obj->vaddr = map.vaddr;
 		} else {
 			msm_obj->vaddr = vmap(pages, obj->size >> PAGE_SHIFT,
 				VM_MAP, pgprot_writecombine(PAGE_KERNEL));
@@ -777,7 +778,9 @@ static void msm_gem_vunmap_locked(struct drm_gem_object *obj)
 		return;
 
 	if (obj->import_attach) {
-		dma_buf_vunmap(obj->import_attach->dmabuf, msm_obj->vaddr);
+		struct iosys_map map = IOSYS_MAP_INIT_VADDR(msm_obj->vaddr);
+
+		dma_buf_vunmap(obj->import_attach->dmabuf, &map);
 		dma_buf_end_cpu_access(obj->import_attach->dmabuf,
 						DMA_BIDIRECTIONAL);
 	} else {
@@ -827,7 +830,7 @@ static void describe_fence(struct dma_fence *fence, const char *type,
 		struct seq_file *m)
 {
 	if (!dma_fence_is_signaled(fence))
-		seq_printf(m, "\t%9s: %s %s seq %u\n", type,
+		seq_printf(m, "\t%9s: %s %s seq %llu\n", type,
 				fence->ops->get_driver_name(fence),
 				fence->ops->get_timeline_name(fence),
 				fence->seqno);
