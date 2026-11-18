@@ -5,6 +5,7 @@
 
 #include <linux/kernel.h>
 #include <linux/slab.h>
+#include <linux/platform_device.h>
 #include <linux/of_platform.h>
 #include <linux/module.h>
 #include <linux/notifier.h>
@@ -12,6 +13,20 @@
 
 #include <drm/drm_panel.h>
 #include "sde_dbg.h"
+
+enum fps {
+	FPS0 = 0,
+	FPS30 = 30,
+	FPS48 = 48,
+	FPS60 = 60,
+	FPS90 = 90,
+	FPS120 = 120,
+	FPS144 = 144,
+};
+
+static inline void sched_set_refresh_rate(enum fps fps)
+{
+}
 
 struct msm_display_fps_info {
 	uint32_t id;

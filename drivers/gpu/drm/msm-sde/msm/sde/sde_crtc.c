@@ -6376,6 +6376,16 @@ static void sde_crtc_early_unregister(struct drm_crtc *crtc)
 	_sde_crtc_destroy_debugfs(crtc);
 }
 
+static int sde_crtc_enable_vblank(struct drm_crtc *crtc)
+{
+	return sde_crtc_vblank(crtc, true);
+}
+
+static void sde_crtc_disable_vblank(struct drm_crtc *crtc)
+{
+	sde_crtc_vblank(crtc, false);
+}
+
 static const struct drm_crtc_funcs sde_crtc_funcs = {
 	.set_config = drm_atomic_helper_set_config,
 	.destroy = sde_crtc_destroy,
@@ -6387,6 +6397,8 @@ static const struct drm_crtc_funcs sde_crtc_funcs = {
 	.atomic_destroy_state = sde_crtc_destroy_state,
 	.late_register = sde_crtc_late_register,
 	.early_unregister = sde_crtc_early_unregister,
+	.enable_vblank = sde_crtc_enable_vblank,
+	.disable_vblank = sde_crtc_disable_vblank,
 };
 
 static const struct drm_crtc_helper_funcs sde_crtc_helper_funcs = {
