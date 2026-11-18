@@ -224,6 +224,16 @@ static inline struct swr_device *to_swr_device(struct device *dev)
 }
 
 /*
+ * struct swr_device_id - SoundWire device identifier
+ * @name: name of the soundwire device
+ * @driver_data: driver specific data
+ */
+struct swr_device_id {
+	char name[SOUNDWIRE_NAME_SIZE];
+	kernel_ulong_t driver_data;
+};
+
+/*
  * struct swr_driver - Manage soundwire slave device driver
  * @probe: binds this driver to soundwire device
  * @remove: unbinds this driver from soundwire device
@@ -247,9 +257,9 @@ struct swr_driver {
 	const struct swr_device_id	*id_table;
 };
 
-static inline struct swr_driver *to_swr_driver(struct device_driver *drv)
+static inline struct swr_driver *to_swr_driver(const struct device_driver *drv)
 {
-	return drv ? container_of(drv, struct swr_driver, driver) : NULL;
+	return drv ? container_of((struct device_driver *)drv, struct swr_driver, driver) : NULL;
 }
 
 /*
