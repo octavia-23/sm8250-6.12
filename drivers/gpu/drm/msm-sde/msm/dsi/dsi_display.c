@@ -1484,7 +1484,7 @@ static ssize_t debugfs_read_esd_check_mode(struct file *file,
 	struct drm_panel_esd_config *esd_config;
 	char *buf;
 	int rc = 0;
-	size_t len;
+	size_t len = 0;
 
 	if (!display)
 		return -ENODEV;
@@ -1544,10 +1544,11 @@ output_mode:
 	}
 
 	*ppos += len;
+	rc = 0;
 
 error:
 	kfree(buf);
-	return len;
+	return rc ? rc : len;
 }
 
 static const struct file_operations dump_info_fops = {
@@ -4545,15 +4546,12 @@ static int dsi_display_get_dfps_timing(struct dsi_display *display,
 	struct dsi_dfps_capabilities dfps_caps;
 	struct dsi_display_mode per_ctrl_mode;
 	struct dsi_mode_info *timing;
-	struct dsi_ctrl *m_ctrl;
-
 	int rc = 0;
 
 	if (!display || !adj_mode) {
 		DSI_ERR("Invalid params\n");
 		return -EINVAL;
 	}
-	m_ctrl = display->ctrl[display->clk_master_idx].ctrl;
 
 	dsi_panel_get_dfps_caps(display->panel, &dfps_caps);
 	if (!dfps_caps.dfps_support) {
@@ -6385,7 +6383,6 @@ int dsi_display_get_modes(struct dsi_display *display,
 	bool is_split_link, is_cmd_mode;
 	u32 num_dfps_rates, timing_mode_count, display_mode_count;
 	u32 sublinks_count, mode_idx, array_idx = 0;
-	struct dsi_dyn_clk_caps *dyn_clk_caps;
 	int i, start, end, rc = -EINVAL;
 
 	if (!display || !out_modes) {
@@ -6416,8 +6413,6 @@ int dsi_display_get_modes(struct dsi_display *display,
 				display->name);
 		goto error;
 	}
-
-	dyn_clk_caps = &(display->panel->dyn_clk_caps);
 
 	timing_mode_count = display->panel->num_timing_nodes;
 

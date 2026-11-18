@@ -704,7 +704,9 @@ static int dsi_panel_wled_register_a(struct dsi_panel *panel,
 {
 	struct backlight_device *bd;
 
-	bd = backlight_device_get_by_type_a(BACKLIGHT_RAW);
+	bd = backlight_device_get_by_name("backlight_a");
+	if (!bd)
+		bd = backlight_device_get_by_type(BACKLIGHT_RAW);
 	if (!bd) {
 		DSI_ERR("[%s] fail raw backlight register\n", panel->name);
 		return -EPROBE_DEFER;
@@ -719,7 +721,9 @@ static int dsi_panel_wled_register_b(struct dsi_panel *panel,
 {
 	struct backlight_device *bd;
 
-	bd = backlight_device_get_by_type_b(BACKLIGHT_RAW);
+	bd = backlight_device_get_by_name("backlight_b");
+	if (!bd)
+		bd = backlight_device_get_by_type(BACKLIGHT_RAW);
 	if (!bd) {
 		DSI_ERR("[%s] fail raw backlight register\n", panel->name);
 		return -EPROBE_DEFER;
@@ -1166,15 +1170,15 @@ static int dsi_panel_parse_timing(struct dsi_mode_info *mode,
 	}
 
 	mode->clk_rate_hz = !rc ? tmp64 : 0;
-	display_mode->priv_info->clk_rate_hz = mode->clk_rate_hz;
+	priv_info->clk_rate_hz = mode->clk_rate_hz;
 
 	rc = utils->read_u32(utils->data, "qcom,mdss-mdp-transfer-time-us",
 				&mode->mdp_transfer_time_us);
 	if (!rc)
-		display_mode->priv_info->mdp_transfer_time_us =
+		priv_info->mdp_transfer_time_us =
 			mode->mdp_transfer_time_us;
 	else
-		display_mode->priv_info->mdp_transfer_time_us = 0;
+		priv_info->mdp_transfer_time_us = 0;
 
 	rc = utils->read_u32(utils->data,
 				"qcom,mdss-dsi-panel-framerate",
@@ -4065,13 +4069,11 @@ struct dsi_panel *dsi_panel_get(struct device *parent,
 		DSI_DEBUG("failed to parse mi config, rc=%d\n", rc);
 
 	panel->power_mode = SDE_MODE_DPMS_OFF;
-	drm_panel_init(&panel->drm_panel);
-	panel->drm_panel.dev = &panel->mipi_device.dev;
 	panel->mipi_device.dev.of_node = of_node;
+	drm_panel_init(&panel->drm_panel, &panel->mipi_device.dev, NULL,
+		       DRM_MODE_CONNECTOR_DSI);
 
-	rc = drm_panel_add(&panel->drm_panel);
-	if (rc)
-		goto error;
+	drm_panel_add(&panel->drm_panel);
 
 	mutex_init(&panel->panel_lock);
 
