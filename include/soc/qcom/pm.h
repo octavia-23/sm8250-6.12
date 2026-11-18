@@ -9,4 +9,9 @@
 #include <linux/types.h>
 #include <linux/pm.h>
 
+static inline uint32_t msm_cpuidle_get_deep_idle_latency(void)
+{
+	return 0;
+}
+
 #endif /* __SOC_QCOM_PM_H */

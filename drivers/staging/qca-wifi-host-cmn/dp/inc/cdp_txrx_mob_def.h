@@ -20,7 +20,6 @@
 #ifndef __CDP_TXRX_MOB_DEF_H
 #define __CDP_TXRX_MOB_DEF_H
 #include <sir_types.h>
-#include <dp_htt.h>
 
 #define TX_WMM_AC_NUM	4
 #define ENABLE_DP_HIST_STATS
