@@ -16,6 +16,8 @@
  * this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <drm/drm_panel.h>
+#include <drm/drm_bridge.h>
+#include <drm/drm_gem_atomic_helper.h>
 
 #include "msm_drv.h"
 #include "msm_gem.h"
@@ -199,7 +201,7 @@ msm_disable_outputs(struct drm_device *dev, struct drm_atomic_state *old_state)
 		 * Each encoder has at most one connector (since we always steal
 		 * it away), so we won't call disable hooks twice.
 		 */
-		drm_bridge_disable(encoder->bridge);
+		drm_atomic_bridge_chain_disable(encoder->bridge, old_state);
 
 		/* Right function depends upon target state. */
 		if (connector->state->crtc && funcs->prepare)
@@ -209,7 +211,7 @@ msm_disable_outputs(struct drm_device *dev, struct drm_atomic_state *old_state)
 		else
 			funcs->dpms(encoder, DRM_MODE_DPMS_OFF);
 
-		drm_bridge_post_disable(encoder->bridge);
+		drm_atomic_bridge_chain_post_disable(encoder->bridge, old_state);
 	}
 
 	for_each_old_crtc_in_state(old_state, crtc, old_crtc_state, i) {
@@ -302,7 +304,7 @@ msm_crtc_set_mode(struct drm_device *dev, struct drm_atomic_state *old_state)
 		if (funcs->mode_set)
 			funcs->mode_set(encoder, mode, adjusted_mode);
 
-		drm_bridge_mode_set(encoder->bridge, mode, adjusted_mode);
+		drm_bridge_chain_mode_set(encoder->bridge, mode, adjusted_mode);
 		SDE_ATRACE_END("msm_set_mode");
 	}
 }
@@ -380,7 +382,7 @@ static void msm_atomic_helper_commit_modeset_enables(struct drm_device *dev,
 					 crtc->base.id);
 
 			if (funcs->atomic_enable)
-				funcs->atomic_enable(crtc, old_crtc_state);
+				funcs->atomic_enable(crtc, old_state);
 			else
 				funcs->commit(crtc);
 		}
@@ -420,7 +422,7 @@ static void msm_atomic_helper_commit_modeset_enables(struct drm_device *dev,
 		 * Each encoder has at most one connector (since we always steal
 		 * it away), so we won't call enable hooks twice.
 		 */
-		drm_bridge_pre_enable(encoder->bridge);
+		drm_atomic_bridge_chain_pre_enable(encoder->bridge, old_state);
 		++bridge_enable_count;
 
 		if (funcs->enable)
@@ -463,7 +465,7 @@ static void msm_atomic_helper_commit_modeset_enables(struct drm_device *dev,
 		DRM_DEBUG_ATOMIC("bridge enable enabling [ENCODER:%d:%s]\n",
 				 encoder->base.id, encoder->name);
 
-		drm_bridge_enable(encoder->bridge);
+		drm_atomic_bridge_chain_enable(encoder->bridge, old_state);
 	}
 	SDE_ATRACE_END("msm_enable");
 }
@@ -473,18 +475,11 @@ int msm_atomic_prepare_fb(struct drm_plane *plane,
 {
 	struct msm_drm_private *priv = plane->dev->dev_private;
 	struct msm_kms *kms = priv->kms;
-	struct drm_gem_object *obj;
-	struct msm_gem_object *msm_obj;
-	struct dma_fence *fence;
 
 	if (!new_state->fb)
 		return 0;
 
-	obj = msm_framebuffer_bo(new_state->fb, 0);
-	msm_obj = to_msm_bo(obj);
-	fence = reservation_object_get_excl_rcu(msm_obj->resv);
-
-	drm_atomic_set_fence_for_plane(new_state, fence);
+	drm_gem_plane_helper_prepare_fb(plane, new_state);
 
 	return msm_framebuffer_prepare(new_state->fb, kms->aspace);
 }
@@ -686,13 +681,7 @@ int msm_atomic_commit(struct drm_device *dev,
 			new_plane_state, i) {
 		if ((new_plane_state->fb != old_plane_state->fb)
 				&& new_plane_state->fb) {
-			struct drm_gem_object *obj =
-				msm_framebuffer_bo(new_plane_state->fb, 0);
-			struct msm_gem_object *msm_obj = to_msm_bo(obj);
-			struct dma_fence *fence =
-				reservation_object_get_excl_rcu(msm_obj->resv);
-
-			drm_atomic_set_fence_for_plane(new_plane_state, fence);
+			drm_gem_plane_helper_prepare_fb(plane, new_plane_state);
 		}
 		c->plane_mask |= (1 << drm_plane_index(plane));
 	}

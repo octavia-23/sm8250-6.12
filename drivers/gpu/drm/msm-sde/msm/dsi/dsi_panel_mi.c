@@ -17,6 +17,7 @@
 #include <linux/slab.h>
 #include <linux/gpio.h>
 #include <linux/of_gpio.h>
+#include <linux/pinctrl/consumer.h>
 #include <video/mipi_display.h>
 
 #include "sde_kms.h"
@@ -2645,13 +2646,10 @@ int dsi_panel_write_cmd_set(struct dsi_panel *panel,
 	struct dsi_cmd_desc *cmds;
 	u32 count;
 	enum dsi_cmd_set_state state;
-	struct dsi_display_mode *mode;
 	const struct mipi_dsi_host_ops *ops = panel->host->ops;
 
 	if (!panel || !panel->cur_mode)
 		return -EINVAL;
-
-	mode = panel->cur_mode;
 
 	cmds = cmd_sets->cmds;
 	count = cmd_sets->count;
@@ -2832,7 +2830,7 @@ int dsi_panel_write_mipi_reg(struct dsi_panel *panel,
 			goto exit_free0;
 		}
 		if (tmp_data > sizeof(g_dsi_read_cfg.rbuf)) {
-			pr_err("read size exceeding the limit %d\n",
+			pr_err("read size exceeding the limit %zu\n",
 					sizeof(g_dsi_read_cfg.rbuf));
 			goto exit_free0;
 		}

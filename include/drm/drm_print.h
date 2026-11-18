@@ -672,6 +672,9 @@ void __drm_err(const char *format, ...);
 #define drm_dbg_kms_ratelimited(drm, fmt, ...) \
 	__DRM_DEFINE_DBG_RATELIMITED(KMS, drm, fmt, ## __VA_ARGS__)
 
+#define DRM_DEBUG_DRIVER_RATELIMITED(fmt, ...) \
+	drm_dbg_ratelimited(NULL, fmt, ##__VA_ARGS__)
+
 /*
  * struct drm_device based WARNs
  *
