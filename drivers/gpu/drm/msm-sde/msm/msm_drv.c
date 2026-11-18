@@ -41,10 +41,12 @@
  */
 
 #include <linux/of_address.h>
+#include <linux/of_platform.h>
 #include <linux/kthread.h>
 #include <linux/workqueue.h>
 #include <uapi/linux/sched/types.h>
 #include <drm/drm_of.h>
+#include <drm/drm_probe_helper.h>
 
 #include "msm_drv.h"
 #include "msm_kms.h"
@@ -52,6 +54,9 @@
 #include "sde_wb.h"
 #include "sde_dbg.h"
 #include "dsi/dsi_panel_mi.h"
+
+static int msm_drm_irq_install(struct drm_device *ddev, int irq);
+static void msm_drm_irq_uninstall(struct drm_device *ddev);
 
 /*
  * MSM driver version:
@@ -70,21 +75,6 @@
 #define IDLE_TIMEOUT_MS_DEFAULT		100
 
 static DEFINE_MUTEX(msm_release_lock);
-
-static void msm_fb_output_poll_changed(struct drm_device *dev)
-{
-	struct msm_drm_private *priv = NULL;
-
-	if (!dev) {
-		DRM_ERROR("output_poll_changed failed, invalid input\n");
-		return;
-	}
-
-	priv = dev->dev_private;
-
-	if (priv->fbdev)
-		drm_fb_helper_hotplug_event(priv->fbdev);
-}
 
 /**
  * msm_atomic_helper_check - validate state object
@@ -117,7 +107,6 @@ int msm_atomic_check(struct drm_device *dev,
 
 static const struct drm_mode_config_funcs mode_config_funcs = {
 	.fb_create = msm_framebuffer_create,
-	.output_poll_changed = msm_fb_output_poll_changed,
 	.atomic_check = msm_atomic_check,
 	.atomic_commit = msm_atomic_commit,
 	.atomic_state_alloc = msm_atomic_state_alloc,
@@ -255,7 +244,7 @@ void __iomem *msm_ioremap(struct platform_device *pdev, const char *name,
 
 	size = resource_size(res);
 
-	ptr = devm_ioremap_nocache(&pdev->dev, res->start, size);
+	ptr = devm_ioremap(&pdev->dev, res->start, size);
 	if (!ptr) {
 		dev_err(&pdev->dev, "failed to ioremap: %s\n", name);
 		return ERR_PTR(-ENOMEM);
@@ -333,7 +322,6 @@ static int vblank_ctrl_queue_work(struct msm_drm_private *priv,
 					int crtc_id, bool enable)
 {
 	struct vblank_work *cur_work;
-	struct drm_crtc *crtc;
 	struct kthread_worker *worker;
 
 	if (!priv || crtc_id >= priv->num_crtcs)
@@ -342,8 +330,6 @@ static int vblank_ctrl_queue_work(struct msm_drm_private *priv,
 	cur_work = kzalloc(sizeof(*cur_work), GFP_ATOMIC);
 	if (!cur_work)
 		return -ENOMEM;
-
-	crtc = priv->crtcs[crtc_id];
 
 	kthread_init_work(&cur_work->work, vblank_ctrl_worker);
 	cur_work->crtc_id = crtc_id;
@@ -1081,96 +1067,6 @@ static void msm_postclose(struct drm_device *dev, struct drm_file *file)
 	context_close(ctx);
 }
 
-static int msm_disable_all_modes_commit(
-		struct drm_device *dev,
-		struct drm_atomic_state *state)
-{
-	struct drm_plane *plane;
-	struct drm_crtc *crtc;
-	unsigned int plane_mask;
-	int ret;
-
-	plane_mask = 0;
-	drm_for_each_plane(plane, dev) {
-		struct drm_plane_state *plane_state;
-
-		plane_state = drm_atomic_get_plane_state(state, plane);
-		if (IS_ERR(plane_state)) {
-			ret = PTR_ERR(plane_state);
-			goto fail;
-		}
-
-		plane_state->rotation = 0;
-
-		plane->old_fb = plane->fb;
-		plane_mask |= 1 << drm_plane_index(plane);
-
-		/* disable non-primary: */
-		if (plane->type == DRM_PLANE_TYPE_PRIMARY)
-			continue;
-
-		DRM_DEBUG("disabling plane %d\n", plane->base.id);
-
-		ret = __drm_atomic_helper_disable_plane(plane, plane_state);
-		if (ret != 0)
-			DRM_ERROR("error %d disabling plane %d\n", ret,
-					plane->base.id);
-	}
-
-	drm_for_each_crtc(crtc, dev) {
-		struct drm_mode_set mode_set;
-
-		memset(&mode_set, 0, sizeof(struct drm_mode_set));
-		mode_set.crtc = crtc;
-
-		DRM_DEBUG("disabling crtc %d\n", crtc->base.id);
-
-		ret = __drm_atomic_helper_set_config(&mode_set, state);
-		if (ret != 0)
-			DRM_ERROR("error %d disabling crtc %d\n", ret,
-					crtc->base.id);
-	}
-
-	DRM_DEBUG("committing disables\n");
-	ret = drm_atomic_commit(state);
-
-fail:
-	DRM_DEBUG("disables result %d\n", ret);
-	return ret;
-}
-
-/**
- * msm_clear_all_modes - disables all planes and crtcs via an atomic commit
- *	based on restore_fbdev_mode_atomic in drm_fb_helper.c
- * @dev: device pointer
- * @Return: 0 on success, otherwise -error
- */
-static int msm_disable_all_modes(
-		struct drm_device *dev,
-		struct drm_modeset_acquire_ctx *ctx)
-{
-	struct drm_atomic_state *state;
-	int ret, i;
-
-	state = drm_atomic_state_alloc(dev);
-	if (!state)
-		return -ENOMEM;
-
-	state->acquire_ctx = ctx;
-
-	for (i = 0; i < TEARDOWN_DEADLOCK_RETRY_MAX; i++) {
-		ret = msm_disable_all_modes_commit(dev, state);
-		if (ret != -EDEADLK || ret != -ERESTARTSYS)
-			break;
-		drm_atomic_state_clear(state);
-		drm_modeset_backoff(ctx);
-	}
-
-	drm_atomic_state_put(state);
-
-	return ret;
-}
-
 static void msm_lastclose(struct drm_device *dev)
 {
 	struct msm_drm_private *priv = dev->dev_private;
@@ -1212,7 +1108,7 @@ retry:
 	if (rc)
 		goto fail;
 
-	rc = msm_disable_all_modes(dev, &ctx);
+	rc = drm_atomic_helper_disable_all(dev, &ctx);
 	if (rc)
 		goto fail;
 

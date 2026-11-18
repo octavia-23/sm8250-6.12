@@ -722,9 +722,6 @@ static void dp_display_send_hpd_event(struct dp_display_private *dp)
 	kobject_uevent_env(&dev->primary->kdev->kobj, KOBJ_CHANGE,
 			envp);
 
-	if (dev->mode_config.funcs->output_poll_changed)
-		dev->mode_config.funcs->output_poll_changed(dev);
-
 	drm_client_dev_hotplug(dev);
 
 	if (connector->status == connector_status_connected) {
