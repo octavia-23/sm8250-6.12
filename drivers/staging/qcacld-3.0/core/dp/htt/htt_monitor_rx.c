@@ -366,7 +366,7 @@ static void htt_mon_rx_get_phy_info(struct htt_host_rx_desc_base *rx_desc,
 		break;
 	case 8:
 		is_stbc = ((VHT_SIG_A_2(rx_desc) >> 4) & 3);
-		/* fallthrough */
+		fallthrough;
 	case 9:
 		ht_flags = 1;
 		sgi = (VHT_SIG_A_2(rx_desc) >> 7) & 0x01;
@@ -379,7 +379,7 @@ static void htt_mon_rx_get_phy_info(struct htt_host_rx_desc_base *rx_desc,
 	case 0x0c:
 		is_stbc = (VHT_SIG_A_2(rx_desc) >> 3) & 1;
 		ldpc = (VHT_SIG_A_2(rx_desc) >> 2) & 1;
-		/* fallthrough */
+		fallthrough;
 	case 0x0d:
 	{
 		uint8_t gid_in_sig = ((VHT_SIG_A_1(rx_desc) >> 4) & 0x3f);
@@ -408,8 +408,8 @@ static void htt_mon_rx_get_phy_info(struct htt_host_rx_desc_base *rx_desc,
 				sta_user_pos * 3) & 0x7);
 		}
 		beamformed = (VHT_SIG_A_2(rx_desc) >> 8) & 0x1;
+		break;
 	}
-		/* fallthrough */
 	default:
 		break;
 	}

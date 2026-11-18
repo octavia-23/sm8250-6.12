@@ -1677,7 +1677,7 @@ static QDF_STATUS wlan_ipa_setup_iface(struct wlan_ipa_priv *ipa_ctx,
 	iface_context->session_id = session_id;
 
 	status = cdp_ipa_setup_iface(ipa_ctx->dp_soc, net_dev->name,
-				     net_dev->dev_addr,
+				     (uint8_t *)net_dev->dev_addr,
 				     iface_context->prod_client,
 				     iface_context->cons_client,
 				     session_id,
@@ -3882,7 +3882,7 @@ QDF_STATUS wlan_ipa_uc_ol_deinit(struct wlan_ipa_priv *ipa_ctx)
  */
 static QDF_STATUS wlan_ipa_uc_send_evt(qdf_netdev_t net_dev,
 				       qdf_ipa_wlan_event type,
-				       uint8_t *mac_addr)
+				       const uint8_t *mac_addr)
 {
 	struct wlan_ipa_priv *ipa_ctx = gp_ipa;
 	qdf_ipa_msg_meta_t meta;

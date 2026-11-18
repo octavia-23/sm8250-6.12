@@ -2942,10 +2942,9 @@ static int msm_fe_dai_dev_probe(struct platform_device *pdev)
 		msm_fe_dais, ARRAY_SIZE(msm_fe_dais));
 }
 
-static int msm_fe_dai_dev_remove(struct platform_device *pdev)
+static void msm_fe_dai_dev_remove(struct platform_device *pdev)
 {
 	snd_soc_unregister_component(&pdev->dev);
-	return 0;
 }
 
 static const struct of_device_id msm_dai_fe_dt_match[] = {

@@ -666,7 +666,7 @@ int __init mius_driver_init(void)
 	}
 
 	mius_major = MAJOR(device_number);
-	mius_class = class_create(THIS_MODULE, "mius_chardev");
+	mius_class = class_create("mius_chardev");
 
 	if (mius_class == NULL) {
 		MI_PRINT_E("Class creation failed");

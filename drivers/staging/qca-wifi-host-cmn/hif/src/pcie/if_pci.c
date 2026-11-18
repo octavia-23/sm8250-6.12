@@ -2198,26 +2198,15 @@ static int hif_enable_pci_nopld(struct hif_pci_softc *sc,
 	/* if CONFIG_ARM_LPAE is enabled, we have to set 64 bits mask
 	 * for 32 bits device also.
 	 */
-	ret =  pci_set_dma_mask(pdev, DMA_BIT_MASK(64));
+	ret = dma_set_mask_and_coherent(&pdev->dev, DMA_BIT_MASK(64));
 	if (ret) {
 		HIF_ERROR("%s: Cannot enable 64-bit pci DMA", __func__);
 		goto err_dma;
 	}
-	ret = pci_set_consistent_dma_mask(pdev, DMA_BIT_MASK(64));
-	if (ret) {
-		HIF_ERROR("%s: Cannot enable 64-bit DMA", __func__);
-		goto err_dma;
-	}
 #else
-	ret = pci_set_dma_mask(pdev, DMA_BIT_MASK(32));
+	ret = dma_set_mask_and_coherent(&pdev->dev, DMA_BIT_MASK(32));
 	if (ret) {
 		HIF_ERROR("%s: Cannot enable 32-bit pci DMA", __func__);
-		goto err_dma;
-	}
-	ret = pci_set_consistent_dma_mask(pdev, DMA_BIT_MASK(32));
-	if (ret) {
-		HIF_ERROR("%s: Cannot enable 32-bit consistent DMA!",
-			   __func__);
 		goto err_dma;
 	}
 #endif

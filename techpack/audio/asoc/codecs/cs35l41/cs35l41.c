@@ -43,7 +43,7 @@
 
 #include "wm_adsp.h"
 #include "cs35l41.h"
-#include <sound/cs35l41.h>
+#include <uapi/sound/cs35l41.h>
 static const char *const cs35l41_supplies[] = {
 	"VA",
 	"VP",
@@ -121,6 +121,7 @@ static int cs35l41_dsp_power_ev(struct snd_soc_dapm_widget *w,
 			wm_halo_early_event(w, kcontrol, event);
 			wm_halo_event(w, kcontrol, event);
 		}
+		fallthrough;
 	default:
 		return 0;
 	}
@@ -140,6 +141,7 @@ static int cs35l41_dsp_load_ev(struct snd_soc_dapm_widget *w,
 			wm_halo_event(w, kcontrol, event);
 			cs35l41->halo_booted = true;
 		}
+		fallthrough;
 	default:
 		return 0;
 	}
@@ -1277,9 +1279,10 @@ static int cs35l41_is_speaker_in_handset(struct snd_pcm_substream *substream,
 	if (strcmp(dai->name, SPK_DAI_NAME))
 		return 0;
 
-	for (i = 0; i < rtd->num_codecs; i++) {
-		if (!strcmp(RCV_DAI_NAME, rtd->codec_dais[i]->name))
-			rcv_dai = rtd->codec_dais[i];
+	for (i = 0; i < rtd->dai_link->num_codecs; i++) {
+		struct snd_soc_dai *c_dai = snd_soc_rtd_to_codec(rtd, i);
+		if (!strcmp(RCV_DAI_NAME, c_dai->name))
+			rcv_dai = c_dai;
 	}
 
 	/* Check the tuning on RCV amp */
@@ -1535,7 +1538,7 @@ static int cs35l41_dai_set_sysclk(struct snd_soc_dai *dai, int clk_id,
 	return 0;
 }
 
-static int cs35l41_digital_mute(struct snd_soc_dai *dai, int mute)
+static int cs35l41_digital_mute(struct snd_soc_dai *dai, int mute, int direction)
 {
 	struct cs35l41_private *cs35l41 =
 		snd_soc_component_get_drvdata(dai->component);
@@ -1905,7 +1908,7 @@ static const struct snd_soc_dai_ops cs35l41_ops = {
 	.set_fmt = cs35l41_set_dai_fmt,
 	.hw_params = cs35l41_pcm_hw_params,
 	.set_sysclk = cs35l41_dai_set_sysclk,
-	.digital_mute = cs35l41_digital_mute,
+	.mute_stream = cs35l41_digital_mute,
 };
 
 static struct snd_soc_dai_driver cs35l41_dai[] = {
@@ -1927,7 +1930,7 @@ static struct snd_soc_dai_driver cs35l41_dai[] = {
 			.formats = CS35L41_TX_FORMATS,
 		},
 		.ops = &cs35l41_ops,
-		.symmetric_rates = 1,
+		.symmetric_rate = 1,
 	},
 };
 

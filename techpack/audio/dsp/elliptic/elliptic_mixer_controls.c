@@ -900,6 +900,7 @@ int elliptic_system_configuration_param_get(struct snd_kcontrol *kcontrol,
 	case ELLIPTIC_SYSTEM_CONFIGURATION_CALIBRATION_METHOD:
 		ucontrol->value.integer.value[0] =
 			elliptic_system_configuration_cache.calibration_method;
+		break;
 	case ELLIPTIC_SYSTEM_CONFIGURATION_DEBUG_MODE:
 		ucontrol->value.integer.value[0] =
 			elliptic_system_configuration_cache.debug_mode;

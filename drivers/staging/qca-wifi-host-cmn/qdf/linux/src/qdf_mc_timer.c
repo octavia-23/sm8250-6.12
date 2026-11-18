@@ -31,6 +31,11 @@
 #include <qdf_module.h>
 #include "qdf_timer.h"
 #include <linux/time64.h>
+#include <linux/rtc.h>
+
+#ifndef rtc_time_to_tm
+#define rtc_time_to_tm(time, tm) rtc_time64_to_tm((time64_t)(time), tm)
+#endif
 
 /* Preprocessor definitions and constants */
 #define LINUX_TIMER_COOKIE 0x12341234

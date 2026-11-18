@@ -41,6 +41,7 @@
 #include <linux/jiffies.h>
 #include <linux/delay.h>
 #include <linux/wait.h>
+#include <linux/panic_notifier.h>
 
 #ifdef CONFIG_ARM64
 
@@ -349,7 +350,7 @@ static int ipa3_active_clients_log_init(void)
 			GFP_KERNEL);
 	active_clients_table_buf = kzalloc(sizeof(
 			char[IPA3_ACTIVE_CLIENTS_TABLE_BUF_SIZE]), GFP_KERNEL);
-	if (ipa3_ctx->ipa3_active_clients_logging.log_buffer == NULL) {
+	if (ipa3_ctx->ipa3_active_clients_logging.log_buffer[0] == NULL) {
 		pr_err("Active Clients Logging memory allocation failed\n");
 		goto bail;
 	}
@@ -7088,7 +7089,7 @@ static int ipa3_pre_init(const struct ipa3_plat_drv_res *resource_p,
 	spin_lock_init(&ipa3_ctx->wc_memb.ipa_tx_mul_spinlock);
 	INIT_LIST_HEAD(&ipa3_ctx->wc_memb.wlan_comm_desc_list);
 
-	ipa3_ctx->cdev.class = class_create(THIS_MODULE, DRV_NAME);
+	ipa3_ctx->cdev.class = class_create(DRV_NAME);
 
 	result = alloc_chrdev_region(&ipa3_ctx->cdev.dev_num, 0, 1, DRV_NAME);
 	if (result) {
@@ -7192,7 +7193,7 @@ static int ipa3_pre_init(const struct ipa3_plat_drv_res *resource_p,
 	if (ipa3_ctx->lan_rx_napi_enable) {
 		init_dummy_netdev(&ipa3_ctx->lan_ndev);
 		netif_napi_add(&ipa3_ctx->lan_ndev, &ipa3_ctx->napi_lan_rx,
-			ipa3_lan_poll, NAPI_WEIGHT);
+			ipa3_lan_poll);
 	}
 
 	mutex_init(&ipa3_ctx->app_clock_vote.mutex);
@@ -8614,7 +8615,7 @@ int ipa3_iommu_map(struct iommu_domain *domain,
 	if (cb->is_cache_coherent)
 		prot |= IOMMU_CACHE;
 
-	return iommu_map(domain, iova, paddr, size, prot);
+	return iommu_map(domain, iova, paddr, size, prot, GFP_KERNEL);
 }
 
 /**

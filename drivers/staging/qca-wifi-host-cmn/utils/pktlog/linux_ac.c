@@ -76,11 +76,20 @@ static int pktlog_release(struct inode *i, struct file *f);
 static ssize_t pktlog_read(struct file *file, char *buf, size_t nbytes,
 			   loff_t *ppos);
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0))
+static const struct proc_ops pktlog_fops = {
+	.proc_open = pktlog_open,
+	.proc_release = pktlog_release,
+	.proc_read = pktlog_read,
+	.proc_lseek = default_llseek,
+};
+#else
 static struct file_operations pktlog_fops = {
 	open:  pktlog_open,
 	release:pktlog_release,
 	read : pktlog_read,
 };
+#endif
 
 void pktlog_disable_adapter_logging(struct hif_opaque_softc *scn)
 {
@@ -213,12 +222,23 @@ qdf_sysctl_decl(ath_sysctl_pktlog_enable, ctl, write, filp, buffer, lenp, ppos)
 		return -ENODEV;
 	}
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0))
+	struct ctl_table ctl_copy = *ctl;
+	ctl_copy.data = &enable;
+	ctl_copy.maxlen = sizeof(enable);
+#else
 	ctl->data = &enable;
 	ctl->maxlen = sizeof(enable);
+#endif
 
 	if (write) {
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0))
+		ret = QDF_SYSCTL_PROC_DOINTVEC(&ctl_copy, write, filp, buffer,
+					       lenp, ppos);
+#else
 		ret = QDF_SYSCTL_PROC_DOINTVEC(ctl, write, filp, buffer,
 					       lenp, ppos);
+#endif
 		if (ret == 0) {
 			ret = pl_dev->pl_funcs->pktlog_enable(
 					(struct hif_opaque_softc *)scn, enable,
@@ -229,16 +249,23 @@ qdf_sysctl_decl(ath_sysctl_pktlog_enable, ctl, write, filp, buffer, lenp, ppos)
 				  "Line:%d %s:proc_dointvec failed reason %d",
 				   __LINE__, __func__, ret);
 	} else {
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0))
+		ret = QDF_SYSCTL_PROC_DOINTVEC(&ctl_copy, write, filp, buffer,
+					       lenp, ppos);
+#else
 		ret = QDF_SYSCTL_PROC_DOINTVEC(ctl, write, filp, buffer,
 					       lenp, ppos);
+#endif
 		if (ret)
 			QDF_TRACE(QDF_MODULE_ID_SYS, QDF_TRACE_LEVEL_DEBUG,
 				  "Line:%d %s:proc_dointvec failed reason %d",
 				   __LINE__, __func__, ret);
 	}
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0))
 	ctl->data = NULL;
 	ctl->maxlen = 0;
+#endif
 	mutex_unlock(&proc_mutex);
 
 	return ret;
@@ -276,23 +303,41 @@ qdf_sysctl_decl(ath_sysctl_pktlog_size, ctl, write, filp, buffer, lenp, ppos)
 		return -ENODEV;
 	}
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0))
+	struct ctl_table ctl_copy = *ctl;
+	ctl_copy.data = &size;
+	ctl_copy.maxlen = sizeof(size);
+#else
 	ctl->data = &size;
 	ctl->maxlen = sizeof(size);
+#endif
 
 	if (write) {
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0))
+		ret = QDF_SYSCTL_PROC_DOINTVEC(&ctl_copy, write, filp, buffer,
+					       lenp, ppos);
+#else
 		ret = QDF_SYSCTL_PROC_DOINTVEC(ctl, write, filp, buffer,
 					       lenp, ppos);
+#endif
 		if (ret == 0)
 			ret = pl_dev->pl_funcs->pktlog_setsize(
 					(struct hif_opaque_softc *)scn, size);
 	} else {
 		size = get_pktlog_bufsize(pl_dev);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 10, 0))
+		ret = QDF_SYSCTL_PROC_DOINTVEC(&ctl_copy, write, filp, buffer,
+					       lenp, ppos);
+#else
 		ret = QDF_SYSCTL_PROC_DOINTVEC(ctl, write, filp, buffer,
 					       lenp, ppos);
+#endif
 	}
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0))
 	ctl->data = NULL;
 	ctl->maxlen = 0;
+#endif
 	mutex_unlock(&proc_mutex);
 
 	return ret;
@@ -319,6 +364,68 @@ static int pktlog_sysctl_register(struct hif_opaque_softc *scn)
 	 * pktlog
 	 * /proc/sys/PKTLOG_PROC_DIR/<adapter>/size for changing the buffer size
 	 */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 5, 0))
+	char sysctl_path[64];
+
+	memset(pl_info_lnx->sysctls, 0, sizeof(pl_info_lnx->sysctls));
+	pl_info_lnx->sysctls[0].procname = "enable";
+	pl_info_lnx->sysctls[0].mode = PKTLOG_PROCSYS_PERM;
+	pl_info_lnx->sysctls[0].proc_handler = ath_sysctl_pktlog_enable;
+	pl_info_lnx->sysctls[0].extra1 = scn;
+
+	pl_info_lnx->sysctls[1].procname = "size";
+	pl_info_lnx->sysctls[1].mode = PKTLOG_PROCSYS_PERM;
+	pl_info_lnx->sysctls[1].proc_handler = ath_sysctl_pktlog_size;
+	pl_info_lnx->sysctls[1].extra1 = scn;
+
+	pl_info_lnx->sysctls[2].procname = "options";
+	pl_info_lnx->sysctls[2].mode = PKTLOG_PROCSYS_PERM;
+	pl_info_lnx->sysctls[2].proc_handler = proc_dointvec;
+	pl_info_lnx->sysctls[2].data = &pl_info_lnx->info.options;
+	pl_info_lnx->sysctls[2].maxlen = sizeof(pl_info_lnx->info.options);
+
+	pl_info_lnx->sysctls[3].procname = "sack_thr";
+	pl_info_lnx->sysctls[3].mode = PKTLOG_PROCSYS_PERM;
+	pl_info_lnx->sysctls[3].proc_handler = proc_dointvec;
+	pl_info_lnx->sysctls[3].data = &pl_info_lnx->info.sack_thr;
+	pl_info_lnx->sysctls[3].maxlen = sizeof(pl_info_lnx->info.sack_thr);
+
+	pl_info_lnx->sysctls[4].procname = "tail_length";
+	pl_info_lnx->sysctls[4].mode = PKTLOG_PROCSYS_PERM;
+	pl_info_lnx->sysctls[4].proc_handler = proc_dointvec;
+	pl_info_lnx->sysctls[4].data = &pl_info_lnx->info.tail_length;
+	pl_info_lnx->sysctls[4].maxlen = sizeof(pl_info_lnx->info.tail_length);
+
+	pl_info_lnx->sysctls[5].procname = "thruput_thresh";
+	pl_info_lnx->sysctls[5].mode = PKTLOG_PROCSYS_PERM;
+	pl_info_lnx->sysctls[5].proc_handler = proc_dointvec;
+	pl_info_lnx->sysctls[5].data = &pl_info_lnx->info.thruput_thresh;
+	pl_info_lnx->sysctls[5].maxlen =
+		sizeof(pl_info_lnx->info.thruput_thresh);
+
+	pl_info_lnx->sysctls[6].procname = "phyerr_thresh";
+	pl_info_lnx->sysctls[6].mode = PKTLOG_PROCSYS_PERM;
+	pl_info_lnx->sysctls[6].proc_handler = proc_dointvec;
+	pl_info_lnx->sysctls[6].data = &pl_info_lnx->info.phyerr_thresh;
+	pl_info_lnx->sysctls[6].maxlen =
+		sizeof(pl_info_lnx->info.phyerr_thresh);
+
+	pl_info_lnx->sysctls[7].procname = "per_thresh";
+	pl_info_lnx->sysctls[7].mode = PKTLOG_PROCSYS_PERM;
+	pl_info_lnx->sysctls[7].proc_handler = proc_dointvec;
+	pl_info_lnx->sysctls[7].data = &pl_info_lnx->info.per_thresh;
+	pl_info_lnx->sysctls[7].maxlen = sizeof(pl_info_lnx->info.per_thresh);
+
+	pl_info_lnx->sysctls[8].procname = "trigger_interval";
+	pl_info_lnx->sysctls[8].mode = PKTLOG_PROCSYS_PERM;
+	pl_info_lnx->sysctls[8].proc_handler = proc_dointvec;
+	pl_info_lnx->sysctls[8].data = &pl_info_lnx->info.trigger_interval;
+	pl_info_lnx->sysctls[8].maxlen =
+		sizeof(pl_info_lnx->info.trigger_interval);
+
+	snprintf(sysctl_path, sizeof(sysctl_path), "%s/%s", PKTLOG_PROC_DIR, proc_name);
+	pl_info_lnx->sysctl_header = register_sysctl(sysctl_path, pl_info_lnx->sysctls);
+#else
 	memset(pl_info_lnx->sysctls, 0, sizeof(pl_info_lnx->sysctls));
 	pl_info_lnx->sysctls[0].procname = PKTLOG_PROC_DIR;
 	pl_info_lnx->sysctls[0].mode = PKTLOG_PROCSYS_DIR_PERM;
@@ -390,6 +497,7 @@ static int pktlog_sysctl_register(struct hif_opaque_softc *scn)
 	/* register_sysctl_table changed from 2.6.21 onwards */
 	pl_info_lnx->sysctl_header =
 		register_sysctl_table(pl_info_lnx->sysctls);
+#endif
 
 	if (!pl_info_lnx->sysctl_header) {
 		qdf_nofl_info("%s: failed to register sysctls!", proc_name);
@@ -866,7 +974,11 @@ __pktlog_read(struct file *file, char *buf, size_t nbytes, loff_t *ppos)
 	struct ath_pktlog_info *pl_info;
 	struct ath_pktlog_buf *log_buf;
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 17, 0))
+	pl_info = pde_data(file_inode(file));
+#else
 	pl_info = PDE_DATA(file->f_path.dentry->d_inode);
+#endif
 	if (!pl_info)
 		return 0;
 
@@ -1009,7 +1121,11 @@ rd_done:
 static ssize_t
 pktlog_read(struct file *file, char *buf, size_t nbytes, loff_t *ppos)
 {
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 17, 0))
+	struct ath_pktlog_info *info = pde_data(file_inode(file));
+#else
 	struct ath_pktlog_info *info = PDE_DATA(file->f_path.dentry->d_inode);
+#endif
 	struct qdf_op_sync *op_sync;
 	ssize_t err_size;
 

@@ -51,7 +51,7 @@ static void *get_hif_hdl_from_file(struct file *file)
 {
 	struct hif_opaque_softc *scn;
 
-	scn = (struct hif_opaque_softc *)PDE_DATA(file_inode(file));
+	scn = (struct hif_opaque_softc *)pde_data(file_inode(file));
 	return (void *)scn;
 }
 
@@ -198,9 +198,9 @@ out:
 		return -EIO;
 }
 
-static const struct file_operations athdiag_fops = {
-	.read = ath_procfs_diag_read,
-	.write = ath_procfs_diag_write,
+static const struct proc_ops athdiag_fops = {
+	.proc_read = ath_procfs_diag_read,
+	.proc_write = ath_procfs_diag_write,
 };
 
 /*

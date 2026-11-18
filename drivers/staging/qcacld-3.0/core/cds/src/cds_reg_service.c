@@ -68,7 +68,7 @@ uint32_t cds_get_vendor_reg_flags(struct wlan_objmgr_pdev *pdev,
 				flags |= IEEE80211_CHAN_VHT80_80;
 		}
 		bandwidth = CH_WIDTH_160MHZ;
-	/* FALLTHROUGH */
+		fallthrough;
 	case CH_WIDTH_160MHZ:
 		if (wlan_reg_get_5g_bonded_channel_state(pdev, chan,
 					bandwidth) != CHANNEL_STATE_INVALID) {
@@ -76,7 +76,7 @@ uint32_t cds_get_vendor_reg_flags(struct wlan_objmgr_pdev *pdev,
 				flags |= IEEE80211_CHAN_VHT160;
 		}
 		bandwidth = CH_WIDTH_80MHZ;
-	/* FALLTHROUGH */
+		fallthrough;
 	case CH_WIDTH_80MHZ:
 		if (wlan_reg_get_5g_bonded_channel_state(pdev, chan,
 					bandwidth) != CHANNEL_STATE_INVALID) {
@@ -84,7 +84,7 @@ uint32_t cds_get_vendor_reg_flags(struct wlan_objmgr_pdev *pdev,
 				flags |= IEEE80211_CHAN_VHT80;
 		}
 		bandwidth = CH_WIDTH_40MHZ;
-	/* FALLTHROUGH */
+		fallthrough;
 	case CH_WIDTH_40MHZ:
 		qdf_mem_zero(&ch_params, sizeof(ch_params));
 		ch_params.ch_width = bandwidth;
@@ -112,14 +112,14 @@ uint32_t cds_get_vendor_reg_flags(struct wlan_objmgr_pdev *pdev,
 			}
 		}
 		bandwidth = CH_WIDTH_20MHZ;
-	/* FALLTHROUGH */
+		fallthrough;
 	case CH_WIDTH_20MHZ:
 		if (is_vht_enabled)
 			flags |= IEEE80211_CHAN_VHT20;
 		if (is_ht_enabled)
 			flags |= IEEE80211_CHAN_HT20;
 		bandwidth = CH_WIDTH_10MHZ;
-	/* FALLTHROUGH */
+		fallthrough;
 	case CH_WIDTH_10MHZ:
 		if ((wlan_reg_get_bonded_channel_state(pdev, chan, bandwidth,
 						0) != CHANNEL_STATE_INVALID) &&
@@ -127,7 +127,7 @@ uint32_t cds_get_vendor_reg_flags(struct wlan_objmgr_pdev *pdev,
 				 WLAN_SUB_20_CH_WIDTH_10))
 			flags |= IEEE80211_CHAN_HALF;
 		bandwidth = CH_WIDTH_5MHZ;
-	/* FALLTHROUGH */
+		fallthrough;
 	case CH_WIDTH_5MHZ:
 		if ((wlan_reg_get_bonded_channel_state(pdev, chan, bandwidth,
 						0) != CHANNEL_STATE_INVALID) &&

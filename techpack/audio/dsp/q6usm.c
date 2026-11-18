@@ -514,7 +514,7 @@ static int32_t q6usm_mmapcallback(struct apr_client_data *data, void *priv)
 					atomic_set(&this_mmap.cmd_state, 0);
 					wake_up(&this_mmap.cmd_wait);
 				}
-				/* fallthrough */
+				fallthrough;
 			case USM_CMD_SHARED_MEM_MAP_REGION:
 				/* For MEM_MAP, additional answer is waited, */
 				/* therfore, no wake-up here */
@@ -577,6 +577,7 @@ static int32_t q6usm_callback(struct apr_client_data *data, void *priv)
 					       __func__, token);
 					break;
 				}
+				fallthrough;
 			case USM_STREAM_CMD_OPEN_READ:
 			case USM_STREAM_CMD_OPEN_WRITE:
 			case USM_STREAM_CMD_SET_ENC_PARAM:

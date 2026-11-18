@@ -539,15 +539,6 @@ static int msm_pcm_ioctl(struct snd_pcm_substream *substream,
 	return snd_pcm_lib_ioctl(substream, cmd, arg);
 }
 
-#ifdef CONFIG_COMPAT
-static int msm_pcm_compat_ioctl(struct snd_pcm_substream *substream,
-				unsigned int cmd, void *arg)
-{
-	/* we only handle RESET which is common for both modes */
-	return msm_pcm_ioctl(substream, cmd, arg);
-}
-#endif
-
 static snd_pcm_uframes_t msm_pcm_pointer(struct snd_pcm_substream *substream)
 {
 	struct snd_pcm_runtime *runtime = substream->runtime;
@@ -585,7 +576,7 @@ static snd_pcm_uframes_t msm_pcm_pointer(struct snd_pcm_substream *substream)
 }
 
 static int msm_pcm_copy(struct snd_pcm_substream *substream, int a,
-	 unsigned long hwoff, void __user *buf, unsigned long fbytes)
+	 unsigned long hwoff, struct iov_iter *iter, unsigned long fbytes)
 {
 	return -EINVAL;
 }
@@ -956,7 +947,7 @@ static int msm_pcm_add_channel_map_control(struct snd_soc_pcm_runtime *rtd)
 
 	pr_debug("%s: added new pcm FE with name %s, id %d, cpu dai %s, device no %d\n",
 		 __func__, rtd->dai_link->name, rtd->dai_link->id,
-		 rtd->dai_link->cpu_dai_name, rtd->pcm->device);
+		 rtd->dai_link->cpus->dai_name, rtd->pcm->device);
 
 	ctl_len = strlen(mixer_ctl_name) + strlen(deviceNo) + 1;
 	mixer_str = kzalloc(ctl_len, GFP_KERNEL);
@@ -1381,12 +1372,9 @@ static int msm_asoc_pcm_new(struct snd_soc_pcm_runtime *rtd)
 static const struct snd_pcm_ops msm_pcm_ops = {
 	.open           = msm_pcm_open,
 	.prepare        = msm_pcm_prepare,
-	.copy_user      = msm_pcm_copy,
+	.copy		= msm_pcm_copy,
 	.hw_params	= msm_pcm_hw_params,
 	.ioctl          = msm_pcm_ioctl,
-#ifdef CONFIG_COMPAT
-	.compat_ioctl   = msm_pcm_compat_ioctl,
-#endif
 	.trigger        = msm_pcm_trigger,
 	.pointer        = msm_pcm_pointer,
 	.mmap           = msm_pcm_mmap,
@@ -1445,7 +1433,7 @@ static int msm_pcm_probe(struct platform_device *pdev)
 	return rc;
 }
 
-static int msm_pcm_remove(struct platform_device *pdev)
+static void msm_pcm_remove(struct platform_device *pdev)
 {
 	struct msm_plat_data *pdata;
 
@@ -1454,7 +1442,6 @@ static int msm_pcm_remove(struct platform_device *pdev)
 	mutex_destroy(&pdata->lock);
 	devm_kfree(&pdev->dev, pdata);
 	snd_soc_unregister_component(&pdev->dev);
-	return 0;
 }
 static const struct of_device_id msm_pcm_noirq_dt_match[] = {
 	{.compatible = "qcom,msm-pcm-dsp-noirq"},

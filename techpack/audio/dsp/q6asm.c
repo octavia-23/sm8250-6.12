@@ -409,16 +409,11 @@ static const struct file_operations audio_input_latency_debug_fops = {
 */
 static struct timeval get_monotonic_timeval(void)
 {
-	static struct timeval out_tval;
+	struct timeval out_tval;
+	struct timespec64 temp_tspec;
 
-	/* Get time from monotonic clock in nanoseconds */
-	ktime_t kTimeNsec = ktime_get();
-
-	/* Convert it to timespec format and later to timeval as expected by audio HAL */
-	struct timespec temp_tspec = ktime_to_timespec(kTimeNsec);
-
-	/* Time returned above is in sec,nanosec format, needs to convert to sec,microsec */
-	out_tval.tv_usec = temp_tspec.tv_nsec/1000;
+	ktime_get_ts64(&temp_tspec);
+	out_tval.tv_usec = temp_tspec.tv_nsec / 1000;
 	out_tval.tv_sec = temp_tspec.tv_sec;
 	return out_tval;
 }
@@ -2014,6 +2009,7 @@ static int32_t q6asm_callback(struct apr_client_data *data, void *priv)
 			if (rtac_make_asm_callback(ac->session, payload,
 					data->payload_size))
 				break;
+			fallthrough;
 		case ASM_SESSION_CMD_PAUSE:
 		case ASM_SESSION_CMD_SUSPEND:
 		case ASM_DATA_CMD_EOS:
@@ -2032,6 +2028,7 @@ static int32_t q6asm_callback(struct apr_client_data *data, void *priv)
 				&(session[session_id].session_lock), flags);
 			return ret;
 		}
+		fallthrough;
 		case ASM_SESSION_CMD_SET_MTMX_STRTR_PARAMS_V2:
 		case ASM_STREAM_CMD_OPEN_READ_V3:
 		case ASM_STREAM_CMD_OPEN_WRITE_V3:
@@ -5171,7 +5168,6 @@ static int q6asm_enc_cfg_blk_pcm_v5(struct audio_client *ac,
 fail_cmd:
 	return rc;
 }
-EXPORT_SYMBOL(q6asm_enc_cfg_blk_pcm_v5);
 
 /*
  * q6asm_enc_cfg_blk_pcm_v4 - sends encoder configuration parameters
@@ -8615,7 +8611,6 @@ fail_cmd:
 	mmap_region_cmd = NULL;
 	return rc;
 }
-EXPORT_SYMBOL(q6asm_memory_map_regions);
 
 /**
  * q6asm_memory_unmap_regions -
@@ -8714,7 +8709,6 @@ fail_cmd:
 	}
 	return rc;
 }
-EXPORT_SYMBOL(q6asm_memory_unmap_regions);
 
 int q6asm_set_lrgain(struct audio_client *ac, int left_gain, int right_gain)
 {

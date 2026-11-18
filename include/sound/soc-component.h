@@ -25,6 +25,8 @@
 	     order <= SND_SOC_COMP_ORDER_LAST;	\
 	     order++)
 
+struct snd_compr_ops;
+
 /* component interface */
 struct snd_compress_ops {
 	int (*open)(struct snd_soc_component *component,
@@ -152,7 +154,15 @@ struct snd_soc_component_driver {
 	snd_pcm_sframes_t (*delay)(struct snd_soc_component *component,
 				   struct snd_pcm_substream *substream);
 
+	/* Legacy ASoC platform compatibility */
+	const struct snd_pcm_ops *ops;
+	int (*pcm_new)(struct snd_soc_pcm_runtime *rtd);
+	void (*pcm_free)(struct snd_pcm *pcm);
+	snd_pcm_sframes_t (*delay_blk)(struct snd_pcm_substream *substream,
+				       struct snd_soc_dai *dai);
+
 	const struct snd_compress_ops *compress_ops;
+	const struct snd_compr_ops *compr_ops;
 
 	/* probe ordering - for components with runtime dependencies */
 	int probe_order;
@@ -366,6 +376,11 @@ int snd_soc_component_is_dummy(struct snd_soc_component *component);
 /* component IO */
 unsigned int snd_soc_component_read(struct snd_soc_component *component,
 				      unsigned int reg);
+static inline unsigned int snd_soc_component_read32(struct snd_soc_component *component,
+						     unsigned int reg)
+{
+	return snd_soc_component_read(component, reg);
+}
 int snd_soc_component_write(struct snd_soc_component *component,
 			    unsigned int reg, unsigned int val);
 int snd_soc_component_update_bits(struct snd_soc_component *component,

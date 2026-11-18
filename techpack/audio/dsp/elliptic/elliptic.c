@@ -688,7 +688,7 @@ int __init elliptic_driver_init(void)
 	}
 
 	elliptic_major = MAJOR(device_number);
-	elliptic_class = class_create(THIS_MODULE, "chardev");
+	elliptic_class = class_create("chardev");
 
 	if (elliptic_class == NULL) {
 		EL_PRINT_E("Class creation failed");

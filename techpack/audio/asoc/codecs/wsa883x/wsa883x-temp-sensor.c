@@ -42,8 +42,8 @@ int wsa883x_get_temp(struct thermal_zone_device *thermal,
 	if (!thermal)
 		return -EINVAL;
 
-	if (thermal->devdata) {
-		pdata = thermal->devdata;
+	pdata = thermal_zone_device_priv(thermal);
+	if (pdata) {
 		if (pdata->component) {
 			component = pdata->component;
 		} else {
@@ -156,9 +156,8 @@ int wsa883x_init_thermal(struct wsa883x_tz_priv *tz_pdata)
 		return -EINVAL;
 	}
 	/* Register with the thermal zone */
-	tz_dev = thermal_zone_device_register(tz_pdata->name,
-				0, 0, tz_pdata,
-				&wsa883x_thermal_ops, NULL, 0, 0);
+	tz_dev = thermal_tripless_zone_device_register(tz_pdata->name,
+				tz_pdata, &wsa883x_thermal_ops, NULL);
 	if (IS_ERR(tz_dev)) {
 		pr_err("%s: thermal device register failed.\n", __func__);
 		return -EINVAL;
@@ -176,12 +175,11 @@ void wsa883x_deinit_thermal(struct thermal_zone_device *tz_dev)
 {
 	struct wsa883x_tz_priv *pdata;
 
-	if (tz_dev && tz_dev->devdata) {
-		pdata = tz_dev->devdata;
+	if (tz_dev) {
+		pdata = thermal_zone_device_priv(tz_dev);
 		if (pdata)
 			unregister_pm_notifier(&pdata->pm_nb);
-	}
-	if (tz_dev)
 		thermal_zone_device_unregister(tz_dev);
+	}
 }
 EXPORT_SYMBOL(wsa883x_deinit_thermal);

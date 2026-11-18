@@ -953,7 +953,7 @@ cdp_data_tx_cb_set(ol_txrx_soc_handle soc, uint8_t vdev_id,
  *            This calls for the following definitions for target devices
  *            (MAC, IPA uc).
  */
-#if HTT_PADDR64
+#ifdef HTT_PADDR64
 typedef uint64_t target_paddr_t;
 #else
 typedef uint32_t target_paddr_t;

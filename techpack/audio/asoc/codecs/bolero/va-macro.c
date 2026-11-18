@@ -1512,7 +1512,7 @@ static int va_macro_hw_params(struct snd_pcm_substream *substream,
 	return 0;
 }
 
-static int va_macro_get_channel_map(struct snd_soc_dai *dai,
+static int va_macro_get_channel_map(const struct snd_soc_dai *dai,
 				unsigned int *tx_num, unsigned int *tx_slot,
 				unsigned int *rx_num, unsigned int *rx_slot)
 {
@@ -3190,7 +3190,7 @@ reg_macro_fail:
 	return ret;
 }
 
-static int va_macro_remove(struct platform_device *pdev)
+static void va_macro_remove(struct platform_device *pdev)
 {
 	struct va_macro_priv *va_priv;
 	int count = 0;
@@ -3198,7 +3198,7 @@ static int va_macro_remove(struct platform_device *pdev)
 	va_priv = dev_get_drvdata(&pdev->dev);
 
 	if (!va_priv)
-		return -EINVAL;
+		return;
 	if (va_priv->is_used_va_swr_gpio) {
 		if (va_priv->swr_ctrl_data)
 			kfree(va_priv->swr_ctrl_data);
@@ -3214,7 +3214,6 @@ static int va_macro_remove(struct platform_device *pdev)
 	mutex_destroy(&va_priv->mclk_lock);
 	if (va_priv->is_used_va_swr_gpio)
 		mutex_destroy(&va_priv->swr_clk_lock);
-	return 0;
 }
 
 

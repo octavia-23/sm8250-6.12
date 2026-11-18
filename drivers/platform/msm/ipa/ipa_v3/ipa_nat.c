@@ -9,9 +9,14 @@
 #include <linux/kernel.h>
 #include <linux/mm.h>
 #include <linux/uaccess.h>
+#include <linux/dma-map-ops.h>
 #include "ipa_i.h"
 #include "ipahal/ipahal.h"
 #include "ipahal/ipahal_nat.h"
+
+#ifndef is_device_dma_coherent
+#define is_device_dma_coherent(dev) dev_is_dma_coherent(dev)
+#endif
 
 /*
  * The following for adding code (ie. for EMULATION) not found on x86.
@@ -53,7 +58,7 @@ enum ipa_nat_ipv6ct_table_type {
 
 static bool sram_compatible;
 
-static int ipa3_nat_ipv6ct_vma_fault_remap(struct vm_fault *vmf)
+static vm_fault_t ipa3_nat_ipv6ct_vma_fault_remap(struct vm_fault *vmf)
 {
 	vmf->page = NULL;
 
@@ -167,7 +172,7 @@ static int ipa3_nat_ipv6ct_mmap(
 
 	if (nmi == IPA_NAT_MEM_IN_SRAM) {
 		if (dev->phys_mem_size == 0 || dev->phys_mem_size > vsize) {
-			IPAERR_RL("%s err vsize(0x%X) phys_mem_size(0x%X)\n",
+			IPAERR_RL("%s err vsize(0x%lX) phys_mem_size(0x%X)\n",
 			  dev->name, vsize, dev->phys_mem_size);
 			result = -EINVAL;
 			goto unlock;
@@ -192,7 +197,7 @@ static int ipa3_nat_ipv6ct_mmap(
 
 	if (nmi == IPA_NAT_MEM_IN_DDR) {
 
-		IPADBG("map sz=0x%zx into vma size=0x%08x\n",
+		IPADBG("map sz=0x%zx into vma size=0x%08lx\n",
 				  mld_ptr->table_alloc_size,
 				  vsize);
 
@@ -213,7 +218,7 @@ static int ipa3_nat_ipv6ct_mmap(
 	} else {
 		if (nmi == IPA_NAT_MEM_IN_SRAM) {
 
-			IPADBG("map phys_mem_size(0x%08X) -> vma sz(0x%08X)\n",
+			IPADBG("map phys_mem_size(0x%08X) -> vma sz(0x%08lX)\n",
 				   dev->phys_mem_size, vsize);
 
 			vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
@@ -302,7 +307,7 @@ static int ipa3_nat_ipv6ct_init_device(
 
 	strlcpy(dev->name, name, IPA_DEV_NAME_MAX_LEN);
 
-	dev->class = class_create(THIS_MODULE, name);
+	dev->class = class_create(name);
 
 	if (IS_ERR(dev->class)) {
 		IPAERR("unable to create the class for %s\n", name);
@@ -679,8 +684,8 @@ int ipa3_allocate_nat_table(
 
 	int result;
 
-	IPADBG("table size:%u offset:%u\n",
-		   table_alloc->size, table_alloc->offset);
+	IPADBG("table size:%zu offset:%ld\n",
+		   table_alloc->size, (long)table_alloc->offset);
 
 	mutex_lock(&nm_ptr->dev.lock);
 
@@ -924,7 +929,7 @@ static inline bool chk_sram_offset_alignment(
 	u32       mask)
 {
 	if (addr & (uintptr_t) mask) {
-		IPAERR("sram addr(%pK) is not properly aligned\n", addr);
+		IPAERR("sram addr(%pK) is not properly aligned\n", (void *)addr);
 		return false;
 	}
 	return true;

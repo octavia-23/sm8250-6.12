@@ -43,7 +43,44 @@
 #define SND_AUDIOCODEC_BESPOKE               ((__u32) 0x0000000E)
 #define SND_AUDIOCODEC_ALAC                  ((__u32) 0x0000000F)
 #define SND_AUDIOCODEC_APE                   ((__u32) 0x00000010)
-#define SND_AUDIOCODEC_MAX                   SND_AUDIOCODEC_APE
+#define SND_AUDIOCODEC_AC3                   ((__u32) 0x00000011)
+#define SND_AUDIOCODEC_EAC3                  ((__u32) 0x00000012)
+#define SND_AUDIOCODEC_DTS                   ((__u32) 0x00000013)
+#define SND_AUDIOCODEC_TRUEHD                ((__u32) 0x00000014)
+#define SND_AUDIOCODEC_DSD                   ((__u32) 0x00000015)
+#define SND_AUDIOCODEC_MP2                   ((__u32) 0x00000016)
+#define SND_AUDIOCODEC_WMA_PRO               ((__u32) 0x00000017)
+#define SND_AUDIOCODEC_APTX                  ((__u32) 0x00000018)
+#define SND_AUDIOCODEC_MAX                   SND_AUDIOCODEC_APTX
+
+#define SNDRV_COMPRESS_LATENCY_MODE          0x00000001
+#define SNDRV_COMPRESS_RENDER_MODE           0x00000002
+#define SNDRV_COMPRESS_CLK_REC_MODE          0x00000003
+#define SNDRV_COMPRESS_RENDER_WINDOW         0x00000004
+#define SNDRV_COMPRESS_START_DELAY           0x00000005
+#define SNDRV_COMPRESS_ENABLE_ADJUST_SESSION_CLOCK 0x00000006
+#define SNDRV_COMPRESS_ADJUST_SESSION_CLOCK  0x00000007
+#define SNDRV_COMPRESS_IN_TTP_OFFSET         0x00000008
+#define SNDRV_COMPRESS_PATH_DELAY            0x00000009
+#define SNDRV_COMPRESS_DSP_POSITION          0x0000000A
+
+#define SNDRV_COMPRESS_LEGACY_LATENCY_MODE   0
+#define SNDRV_COMPRESS_LOW_LATENCY_MODE      1
+
+#define SNDRV_COMPRESS_RENDER_MODE_AUDIO_MASTER 0
+#define SNDRV_COMPRESS_RENDER_MODE_STC_MASTER   1
+#define SNDRV_COMPRESS_RENDER_MODE_TTP          2
+
+#define SNDRV_COMPRESS_CLK_REC_MODE_NONE        0
+#define SNDRV_COMPRESS_CLK_REC_MODE_AUTO        1
+
+#define COMPRESSED_TIMESTAMP_FLAG            0x00000001
+
+struct snd_codec_metadata {
+	__u32 length;
+	__u32 offset;
+	__u64 timestamp;
+} __attribute__((packed, aligned(4)));
 
 /*
  * Profile and modes are listed with bit masks. This allows for a
@@ -212,6 +249,12 @@
 
 struct snd_enc_wma {
 	__u32 super_block_align; /* WMA Type-specific data */
+	__u32 avg_bit_rate;
+	__u32 bits_per_sample;
+	__u32 channelmask;
+	__u32 encodeopt;
+	__u32 encodeopt1;
+	__u32 encodeopt2;
 };
 
 
@@ -310,8 +353,11 @@ struct snd_dec_alac {
 	__u8 pb;
 	__u8 mb;
 	__u8 kb;
+	__u32 bit_depth;
 	__u32 max_run;
 	__u32 max_frame_bytes;
+	__u32 avg_bit_rate;
+	__u32 channel_layout_tag;
 } __attribute__((packed, aligned(4)));
 
 struct snd_dec_ape {
@@ -321,7 +367,26 @@ struct snd_dec_ape {
 	__u32 blocks_per_frame;
 	__u32 final_frame_blocks;
 	__u32 total_frames;
+	__u32 bits_per_sample;
 	__u32 seek_table_present;
+} __attribute__((packed, aligned(4)));
+
+struct snd_dec_vorbis {
+	__u32 bit_stream_fmt;
+} __attribute__((packed, aligned(4)));
+
+struct snd_dec_dsd {
+	__u32 blk_size;
+} __attribute__((packed, aligned(4)));
+
+struct snd_dec_aptx {
+	__u32 lap;
+	__u32 uap;
+	__u32 nap;
+} __attribute__((packed, aligned(4)));
+
+struct snd_dec_amrwbplus {
+	__u32 bit_stream_fmt;
 } __attribute__((packed, aligned(4)));
 
 union snd_codec_options {
@@ -331,9 +396,16 @@ union snd_codec_options {
 	struct snd_enc_flac flac;
 	struct snd_enc_generic generic;
 	struct snd_dec_flac flac_d;
+	struct snd_dec_flac flac_dec;
 	struct snd_dec_wma wma_d;
 	struct snd_dec_alac alac_d;
+	struct snd_dec_alac alac;
 	struct snd_dec_ape ape_d;
+	struct snd_dec_ape ape;
+	struct snd_dec_vorbis vorbis_dec;
+	struct snd_dec_dsd dsd_dec;
+	struct snd_dec_aptx aptx_dec;
+	struct snd_dec_amrwbplus amrwbplus;
 	struct {
 		__u32 out_sample_rate;
 	} src_d;
@@ -430,7 +502,8 @@ struct snd_codec {
 	__u32 align;
 	union snd_codec_options options;
 	__u32 pcm_format;
-	__u32 reserved[2];
+	__u32 flags;
+	__u32 compr_passthr;
 } __attribute__((packed, aligned(4)));
 
 #endif

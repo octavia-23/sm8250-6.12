@@ -229,6 +229,7 @@ config IPA3_REGDUMP
 choice
 	prompt "Platform whose registers are to be dumped/collected"
 	depends on IPA3_REGDUMP
+	default IPA3_REGDUMP_IPA_4_5
 	help
 	  The choices within represent the possible platforms this build is
 	  intended for. The choices are mutually exclusive.  By selecting
@@ -239,7 +240,6 @@ choice
 config IPA3_REGDUMP_IPA_4_5
 	bool "The 4.5 IPA"
 	depends on IPA3_REGDUMP
-	depends on ARCH_KONA
 	help
 	  Set this to enable the 4.5 IPA's registers to be dumped/collected.
 

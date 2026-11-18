@@ -1535,6 +1535,29 @@ extern const struct snd_pcm_chmap_elem snd_pcm_alt_chmaps[];
 #define SND_PCM_CHMAP_MASK_246	(SND_PCM_CHMAP_MASK_24 | (1U << 6))
 #define SND_PCM_CHMAP_MASK_2468	(SND_PCM_CHMAP_MASK_246 | (1U << 8))
 
+#define PCM_RUNTIME_CHECK(sub) snd_BUG_ON(!(sub) || !(sub)->runtime)
+
+struct snd_pcm_usr {
+	struct snd_pcm *pcm;
+	struct snd_kcontrol *kctl;
+	void *private_data;
+};
+
+int snd_pcm_add_usr_ctls(struct snd_pcm *pcm, int stream,
+			 void *private_data, int count, int ctl_len,
+			 int dai_link_id, struct snd_pcm_usr **pusr);
+
+struct snd_pcm_volume {
+	struct snd_pcm *pcm;
+	struct snd_kcontrol *kctl;
+	int stream;
+	void *private_data;
+};
+
+int snd_pcm_add_volume_ctls(struct snd_pcm *pcm, int stream,
+			    void *private_data, int count,
+			    int dai_link_id, struct snd_pcm_volume **pvol);
+
 int snd_pcm_add_chmap_ctls(struct snd_pcm *pcm, int stream,
 			   const struct snd_pcm_chmap_elem *chmap,
 			   int max_channels,

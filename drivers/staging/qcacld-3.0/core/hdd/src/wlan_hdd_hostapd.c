@@ -739,7 +739,11 @@ static int __hdd_hostapd_set_mac_address(struct net_device *dev, void *addr)
 		  dev->name);
 	hdd_update_dynamic_mac(hdd_ctx, &adapter->mac_addr, &mac_addr);
 	memcpy(&adapter->mac_addr, psta_mac_addr->sa_data, ETH_ALEN);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 17, 0))
+	eth_hw_addr_set(dev, psta_mac_addr->sa_data);
+#else
 	memcpy(dev->dev_addr, psta_mac_addr->sa_data, ETH_ALEN);
+#endif
 	hdd_exit();
 	return 0;
 }
@@ -923,7 +927,11 @@ QDF_STATUS hdd_chan_change_notify(struct hdd_adapter *adapter,
 		chandef.chan->center_freq, chandef.width, chandef.center_freq1,
 		chandef.center_freq2);
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0))
+	cfg80211_ch_switch_notify(dev, &chandef, 0);
+#else
 	cfg80211_ch_switch_notify(dev, &chandef);
+#endif
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -1977,7 +1985,7 @@ QDF_STATUS hdd_hostapd_sap_event_cb(struct sap_event *sap_event,
 						   adapter->device_mode,
 						   adapter->vdev_id,
 						   WLAN_IPA_AP_CONNECT,
-						   adapter->dev->dev_addr);
+						   adapter->mac_addr.bytes);
 			if (status)
 				hdd_err("WLAN_AP_CONNECT event failed");
 		}
@@ -3711,7 +3719,11 @@ struct hdd_adapter *hdd_wlan_create_ap_dev(struct hdd_context *hdd_ctx,
 	dev->mtu = HDD_DEFAULT_MTU;
 	dev->tx_queue_len = HDD_NETDEV_TX_QUEUE_LEN;
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 17, 0))
+	eth_hw_addr_set(dev, mac_addr);
+#else
 	qdf_mem_copy(dev->dev_addr, mac_addr, sizeof(tSirMacAddr));
+#endif
 	qdf_mem_copy(adapter->mac_addr.bytes, mac_addr, sizeof(tSirMacAddr));
 
 	adapter->offloads_configured = false;
@@ -6118,8 +6130,14 @@ static enum hw_mode_bandwidth wlan_hdd_get_channel_bw(
  *
  * Return: zero for success non-zero for failure
  */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
+int wlan_hdd_cfg80211_stop_ap(struct wiphy *wiphy,
+				struct net_device *dev,
+				unsigned int link_id)
+#else
 int wlan_hdd_cfg80211_stop_ap(struct wiphy *wiphy,
 				struct net_device *dev)
+#endif
 {
 	int errno;
 	struct osif_vdev_sync *vdev_sync;
@@ -6718,9 +6736,16 @@ static int __wlan_hdd_cfg80211_start_ap(struct wiphy *wiphy,
 
 		hdd_start_tsf_sync(adapter);
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
+		if (wdev->links[0].ap.chandef.chan &&
+		    wdev->links[0].ap.chandef.chan->center_freq !=
+				params->chandef.chan->center_freq)
+			params->chandef = wdev->links[0].ap.chandef;
+#else
 		if (wdev->chandef.chan->center_freq !=
 				params->chandef.chan->center_freq)
 			params->chandef = wdev->chandef;
+#endif
 		/*
 		 * If Do_Not_Break_Stream enabled send avoid channel list
 		 * to application.
@@ -6863,6 +6888,25 @@ static int __wlan_hdd_cfg80211_change_beacon(struct wiphy *wiphy,
  *
  * Return: zero for success non-zero for failure
  */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 7, 0))
+int wlan_hdd_cfg80211_change_beacon(struct wiphy *wiphy,
+				struct net_device *dev,
+				struct cfg80211_ap_update *params)
+{
+	int errno;
+	struct osif_vdev_sync *vdev_sync;
+
+	errno = osif_vdev_sync_op_start(dev, &vdev_sync);
+	if (errno)
+		return errno;
+
+	errno = __wlan_hdd_cfg80211_change_beacon(wiphy, dev, &params->beacon);
+
+	osif_vdev_sync_op_stop(vdev_sync);
+
+	return errno;
+}
+#else
 int wlan_hdd_cfg80211_change_beacon(struct wiphy *wiphy,
 				struct net_device *dev,
 				struct cfg80211_beacon_data *params)
@@ -6880,6 +6924,7 @@ int wlan_hdd_cfg80211_change_beacon(struct wiphy *wiphy,
 
 	return errno;
 }
+#endif
 
 /**
  * hdd_sap_indicate_disconnect_for_sta() - Indicate disconnect indication

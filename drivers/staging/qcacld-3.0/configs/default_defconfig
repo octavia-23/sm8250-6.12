@@ -97,6 +97,11 @@ ifndef CONFIG_ROME_IF
 endif
 endif
 
+ifndef CONFIG_ROME_IF
+	# Default to PCI interface for Kona / Alioth
+	CONFIG_ROME_IF = pci
+endif
+
 # Make WLAN as open-source driver by default
 WLAN_OPEN_SOURCE := y
 

@@ -519,6 +519,29 @@ int snd_soc_info_volsw_range(struct snd_kcontrol *kcontrol,
 EXPORT_SYMBOL_GPL(snd_soc_info_volsw_range);
 
 /**
+ * snd_soc_info_multi_ext - multi register control info callback
+ * @kcontrol: mixer control
+ * @uinfo: control element information
+ *
+ * Callback to provide information about a multi register mixer control.
+ *
+ * Returns 0 for success.
+ */
+int snd_soc_info_multi_ext(struct snd_kcontrol *kcontrol,
+	struct snd_ctl_elem_info *uinfo)
+{
+	struct soc_multi_mixer_control *mc =
+		(struct soc_multi_mixer_control *)kcontrol->private_value;
+
+	uinfo->type = SNDRV_CTL_ELEM_TYPE_INTEGER;
+	uinfo->count = mc->count;
+	uinfo->value.integer.min = mc->min;
+	uinfo->value.integer.max = mc->max;
+	return 0;
+}
+EXPORT_SYMBOL_GPL(snd_soc_info_multi_ext);
+
+/**
  * snd_soc_put_volsw_range - single mixer put value callback with range.
  * @kcontrol: mixer control
  * @ucontrol: control element information

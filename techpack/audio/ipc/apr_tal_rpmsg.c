@@ -10,6 +10,7 @@
 #include <linux/delay.h>
 #include <linux/rpmsg.h>
 #include <ipc/apr_tal.h>
+#include <linux/of.h>
 #include <linux/of_device.h>
 
 enum apr_channel_state {

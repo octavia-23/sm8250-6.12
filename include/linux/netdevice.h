@@ -533,6 +533,11 @@ static inline bool napi_schedule(struct napi_struct *n)
 	return false;
 }
 
+static inline bool napi_reschedule(struct napi_struct *n)
+{
+	return napi_schedule(n);
+}
+
 /**
  *	napi_schedule_irqoff - schedule NAPI poll
  *	@n: NAPI context
@@ -3966,6 +3971,10 @@ void generic_xdp_tx(struct sk_buff *skb, struct bpf_prog *xdp_prog);
 int do_xdp_generic(struct bpf_prog *xdp_prog, struct sk_buff **pskb);
 int netif_rx(struct sk_buff *skb);
 int __netif_rx(struct sk_buff *skb);
+static inline int netif_rx_ni(struct sk_buff *skb)
+{
+	return netif_rx(skb);
+}
 
 int netif_receive_skb(struct sk_buff *skb);
 int netif_receive_skb_core(struct sk_buff *skb);

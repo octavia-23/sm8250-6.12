@@ -1344,7 +1344,7 @@ out:
 	return ret;
 }
 
-static void ipa3_wwan_tx_timeout(struct net_device *dev)
+static void ipa3_wwan_tx_timeout(struct net_device *dev, unsigned int txqueue)
 {
 	struct ipa3_wwan_private *wwan_ptr = netdev_priv(dev);
 
@@ -2494,7 +2494,7 @@ static int ipa3_wwan_probe(struct platform_device *pdev)
 
 	if (ipa3_rmnet_res.ipa_napi_enable)
 		netif_napi_add(dev, &(rmnet_ipa3_ctx->wwan_priv->napi),
-		       ipa3_rmnet_poll, NAPI_WEIGHT);
+		       ipa3_rmnet_poll);
 	ret = register_netdev(dev);
 	if (ret) {
 		IPAWANERR("unable to register ipa_netdev %d rc=%d\n",
@@ -2550,7 +2550,7 @@ wan_ioctl_init_err:
 	return ret;
 }
 
-static int ipa3_wwan_remove(struct platform_device *pdev)
+static void ipa3_wwan_remove(struct platform_device *pdev)
 {
 	int ret;
 
@@ -2594,7 +2594,7 @@ static int ipa3_wwan_remove(struct platform_device *pdev)
 	rmnet_ipa3_ctx->dl_csum_offload_enabled = false;
 	atomic_set(&rmnet_ipa3_ctx->is_initialized, 0);
 	IPAWANINFO("rmnet_ipa completed deinitialization\n");
-	return 0;
+	return;
 }
 
 /**
@@ -4712,39 +4712,17 @@ static void rmnet_ipa_debugfs_init(void)
 		return;
 	}
 
-	dbgfs->dfile_outstanding_high = debugfs_create_u32("outstanding_high",
+	debugfs_create_u32("outstanding_high",
 		read_write_mode, dbgfs->dent,
 		&rmnet_ipa3_ctx->outstanding_high);
-	if (!dbgfs->dfile_outstanding_high ||
-		IS_ERR(dbgfs->dfile_outstanding_high)) {
-		pr_err("failed to create file for outstanding_high\n");
-		goto fail;
-	}
 
-	dbgfs->dfile_outstanding_high_ctl =
-		debugfs_create_u32("outstanding_high_ctl",
+	debugfs_create_u32("outstanding_high_ctl",
 		read_write_mode, dbgfs->dent,
 		&rmnet_ipa3_ctx->outstanding_high_ctl);
-	if (!dbgfs->dfile_outstanding_high_ctl ||
-		IS_ERR(dbgfs->dfile_outstanding_high_ctl)) {
-		pr_err("failed to create file for outstanding_high_ctl\n");
-		goto fail;
-	}
 
-	dbgfs->dfile_outstanding_low = debugfs_create_u32("outstanding_low",
+	debugfs_create_u32("outstanding_low",
 		read_write_mode, dbgfs->dent,
 		&rmnet_ipa3_ctx->outstanding_low);
-	if (!dbgfs->dfile_outstanding_low ||
-		IS_ERR(dbgfs->dfile_outstanding_low)) {
-		pr_err("failed to create file for outstanding_low\n");
-		goto fail;
-	}
-
-	return;
-
-fail:
-	debugfs_remove_recursive(dbgfs->dent);
-	memset(dbgfs, 0, sizeof(struct rmnet_ipa_debugfs));
 }
 
 static void rmnet_ipa_debugfs_remove(void)

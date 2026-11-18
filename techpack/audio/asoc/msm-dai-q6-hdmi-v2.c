@@ -682,10 +682,9 @@ static int msm_dai_q6_hdmi_dev_probe(struct platform_device *pdev)
 	return rc;
 }
 
-static int msm_dai_q6_hdmi_dev_remove(struct platform_device *pdev)
+static void msm_dai_q6_hdmi_dev_remove(struct platform_device *pdev)
 {
 	snd_soc_unregister_component(&pdev->dev);
-	return 0;
 }
 
 static const struct of_device_id msm_dai_q6_hdmi_dt_match[] = {

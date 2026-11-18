@@ -10,6 +10,7 @@
 #include <linux/slab.h>
 #include <linux/clk.h>
 #include <linux/of_device.h>
+#include <linux/of_platform.h>
 #include <sound/core.h>
 #include <sound/pcm.h>
 #include <sound/soc.h>
@@ -2726,8 +2727,8 @@ static int msm_dai_q6_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
 }
 
 static int msm_dai_q6_set_channel_map(struct snd_soc_dai *dai,
-				unsigned int tx_num, unsigned int *tx_slot,
-				unsigned int rx_num, unsigned int *rx_slot)
+				unsigned int tx_num, const unsigned int *tx_slot,
+				unsigned int rx_num, const unsigned int *rx_slot)
 
 {
 	int rc = 0;
@@ -2820,7 +2821,7 @@ static int msm_dai_q6_set_channel_map(struct snd_soc_dai *dai,
 }
 
 static int msm_dai_q6_spk_digital_mute(struct snd_soc_dai *dai,
-				       int mute)
+				       int mute, int direction)
 {
 	int port_id = dai->id;
 	struct msm_dai_q6_dai_data *dai_data = dev_get_drvdata(dai->dev);
@@ -2845,7 +2846,7 @@ static struct snd_soc_dai_ops msm_dai_slimbus_0_rx_ops = {
 	.shutdown	= msm_dai_q6_shutdown,
 	.set_fmt	= msm_dai_q6_set_fmt,
 	.set_channel_map = msm_dai_q6_set_channel_map,
-	.digital_mute = msm_dai_q6_spk_digital_mute,
+	.mute_stream = msm_dai_q6_spk_digital_mute,
 };
 
 static int msm_dai_q6_cal_info_put(struct snd_kcontrol *kcontrol,
@@ -4745,7 +4746,7 @@ fail_pdata_nomem:
 	return rc;
 }
 
-static int msm_auxpcm_dev_remove(struct platform_device *pdev)
+static void msm_auxpcm_dev_remove(struct platform_device *pdev)
 {
 	struct msm_dai_q6_auxpcm_dai_data *dai_data;
 
@@ -4756,8 +4757,6 @@ static int msm_auxpcm_dev_remove(struct platform_device *pdev)
 	mutex_destroy(&dai_data->rlock);
 	kfree(dai_data);
 	kfree(pdev->dev.platform_data);
-
-	return 0;
 }
 
 static const struct of_device_id msm_auxpcm_dev_dt_match[] = {
@@ -6589,10 +6588,9 @@ rtn:
 	return rc;
 }
 
-static int msm_dai_q6_mi2s_dev_remove(struct platform_device *pdev)
+static void msm_dai_q6_mi2s_dev_remove(struct platform_device *pdev)
 {
 	snd_soc_unregister_component(&pdev->dev);
-	return 0;
 }
 
 static int msm_dai_q6_dai_meta_mi2s_probe(struct snd_soc_dai *dai)
@@ -7244,10 +7242,9 @@ rtn:
 	return rc;
 }
 
-static int msm_dai_q6_meta_mi2s_dev_remove(struct platform_device *pdev)
+static void msm_dai_q6_meta_mi2s_dev_remove(struct platform_device *pdev)
 {
 	snd_soc_unregister_component(&pdev->dev);
-	return 0;
 }
 
 static const struct snd_soc_component_driver msm_dai_q6_component = {
@@ -7508,10 +7505,9 @@ register_uplink_capture:
 	return rc;
 }
 
-static int msm_dai_q6_dev_remove(struct platform_device *pdev)
+static void msm_dai_q6_dev_remove(struct platform_device *pdev)
 {
 	snd_soc_unregister_component(&pdev->dev);
-	return 0;
 }
 
 static const struct of_device_id msm_dai_q6_dev_dt_match[] = {
@@ -7547,10 +7543,9 @@ static int msm_dai_q6_probe(struct platform_device *pdev)
 	return rc;
 }
 
-static int msm_dai_q6_remove(struct platform_device *pdev)
+static void msm_dai_q6_remove(struct platform_device *pdev)
 {
 	of_platform_depopulate(&pdev->dev);
-	return 0;
 }
 
 static const struct of_device_id msm_dai_q6_dt_match[] = {
@@ -7582,9 +7577,8 @@ static int msm_dai_mi2s_q6_probe(struct platform_device *pdev)
 	return rc;
 }
 
-static int msm_dai_mi2s_q6_remove(struct platform_device *pdev)
+static void msm_dai_mi2s_q6_remove(struct platform_device *pdev)
 {
-	return 0;
 }
 
 static const struct of_device_id msm_dai_mi2s_dt_match[] = {
@@ -7688,10 +7682,9 @@ static int msm_dai_q6_spdif_dev_probe(struct platform_device *pdev)
 	return rc;
 }
 
-static int msm_dai_q6_spdif_dev_remove(struct platform_device *pdev)
+static void msm_dai_q6_spdif_dev_remove(struct platform_device *pdev)
 {
 	snd_soc_unregister_component(&pdev->dev);
-	return 0;
 }
 
 static const struct of_device_id msm_dai_q6_spdif_dt_match[] = {
@@ -7920,9 +7913,8 @@ rtn:
 	return rc;
 }
 
-static int msm_dai_tdm_q6_remove(struct platform_device *pdev)
+static void msm_dai_tdm_q6_remove(struct platform_device *pdev)
 {
-	return 0;
 }
 
 static const struct of_device_id msm_dai_tdm_dt_match[] = {
@@ -9346,8 +9338,8 @@ static int msm_dai_q6_tdm_set_sysclk(struct snd_soc_dai *dai,
 }
 
 static int msm_dai_q6_tdm_set_channel_map(struct snd_soc_dai *dai,
-				unsigned int tx_num, unsigned int *tx_slot,
-				unsigned int rx_num, unsigned int *rx_slot)
+				unsigned int tx_num, const unsigned int *tx_slot,
+				unsigned int rx_num, const unsigned int *rx_slot)
 {
 	int rc = 0;
 	struct msm_dai_q6_tdm_dai_data *dai_data =
@@ -12238,7 +12230,7 @@ rtn:
 	return rc;
 }
 
-static int msm_dai_q6_tdm_dev_remove(struct platform_device *pdev)
+static void msm_dai_q6_tdm_dev_remove(struct platform_device *pdev)
 {
 	struct msm_dai_q6_tdm_dai_data *dai_data =
 		dev_get_drvdata(&pdev->dev);
@@ -12246,8 +12238,6 @@ static int msm_dai_q6_tdm_dev_remove(struct platform_device *pdev)
 	snd_soc_unregister_component(&pdev->dev);
 
 	kfree(dai_data);
-
-	return 0;
 }
 
 static const struct of_device_id msm_dai_q6_tdm_dev_dt_match[] = {
@@ -12365,8 +12355,8 @@ static int msm_dai_q6_dai_cdc_dma_remove(struct snd_soc_dai *dai)
 }
 
 static int msm_dai_q6_cdc_dma_set_channel_map(struct snd_soc_dai *dai,
-			unsigned int tx_num_ch, unsigned int *tx_ch_mask,
-			unsigned int rx_num_ch, unsigned int *rx_ch_mask)
+			unsigned int tx_num_ch, const unsigned int *tx_ch_mask,
+			unsigned int rx_num_ch, const unsigned int *rx_ch_mask)
 
 {
 	int rc = 0;
@@ -12525,7 +12515,7 @@ static void msm_dai_q6_cdc_dma_shutdown(struct snd_pcm_substream *substream,
 }
 
 static int msm_dai_q6_cdc_dma_digital_mute(struct snd_soc_dai *dai,
-				       int mute)
+				       int mute, int direction)
 {
 	int port_id = dai->id;
 	struct msm_dai_q6_cdc_dma_dai_data *dai_data =
@@ -12549,7 +12539,7 @@ static struct snd_soc_dai_ops msm_dai_q6_cdc_wsa_dma_ops = {
 	.hw_params        = msm_dai_q6_cdc_dma_hw_params,
 	.shutdown         = msm_dai_q6_cdc_dma_shutdown,
 	.set_channel_map = msm_dai_q6_cdc_dma_set_channel_map,
-	.digital_mute = msm_dai_q6_cdc_dma_digital_mute,
+	.mute_stream = msm_dai_q6_cdc_dma_digital_mute,
 };
 
 static struct snd_soc_dai_driver msm_dai_q6_cdc_dma_dai[] = {
@@ -13160,10 +13150,9 @@ static int msm_dai_q6_cdc_dma_dev_probe(struct platform_device *pdev)
 	return -ENODEV;
 }
 
-static int msm_dai_q6_cdc_dma_dev_remove(struct platform_device *pdev)
+static void msm_dai_q6_cdc_dma_dev_remove(struct platform_device *pdev)
 {
 	snd_soc_unregister_component(&pdev->dev);
-	return 0;
 }
 
 static const struct of_device_id msm_dai_q6_cdc_dma_dev_dt_match[] = {
@@ -13198,10 +13187,9 @@ static int msm_dai_cdc_dma_q6_probe(struct platform_device *pdev)
 	return rc;
 }
 
-static int msm_dai_cdc_dma_q6_remove(struct platform_device *pdev)
+static void msm_dai_cdc_dma_q6_remove(struct platform_device *pdev)
 {
 	of_platform_depopulate(&pdev->dev);
-	return 0;
 }
 
 static const struct of_device_id msm_dai_cdc_dma_dt_match[] = {

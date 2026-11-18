@@ -28,6 +28,7 @@
 /* header files for configuration API */
 #include <ol_cfg.h>             /* ol_cfg_is_high_latency */
 #include <ol_if_athvar.h>
+#include <pld_common.h>
 
 /* header files for HTT API */
 #include <ol_htt_api.h>

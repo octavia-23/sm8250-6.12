@@ -141,14 +141,39 @@ qdf_export_symbol(qdf_create_thread);
 
 static uint16_t qdf_thread_id;
 
+struct qdf_thread_runner_ctx {
+	qdf_thread_func callback;
+	void *context;
+};
+
+static int qdf_thread_runner(void *data)
+{
+	struct qdf_thread_runner_ctx *tctx = data;
+	qdf_thread_func callback = tctx->callback;
+	void *context = tctx->context;
+
+	kfree(tctx);
+	return (int)callback(context);
+}
+
 qdf_thread_t *qdf_thread_run(qdf_thread_func callback, void *context)
 {
 	struct task_struct *thread;
+	struct qdf_thread_runner_ctx *tctx;
 
-	thread = kthread_create((qdf_thread_os_func)callback, context,
-				"qdf %u", qdf_thread_id++);
-	if (IS_ERR(thread))
+	tctx = kzalloc(sizeof(*tctx), GFP_KERNEL);
+	if (!tctx)
 		return NULL;
+
+	tctx->callback = callback;
+	tctx->context = context;
+
+	thread = kthread_create(qdf_thread_runner, tctx,
+				"qdf %u", qdf_thread_id++);
+	if (IS_ERR(thread)) {
+		kfree(tctx);
+		return NULL;
+	}
 
 	get_task_struct(thread);
 	wake_up_process(thread);

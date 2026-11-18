@@ -349,6 +349,8 @@ int snd_soc_component_open(struct snd_soc_component *component,
 
 	if (component->driver->open)
 		ret = component->driver->open(component, substream);
+	else if (component->driver->ops && component->driver->ops->open)
+		ret = component->driver->ops->open(substream);
 
 	/* mark substream if succeeded */
 	if (ret == 0)
@@ -368,6 +370,8 @@ int snd_soc_component_close(struct snd_soc_component *component,
 
 	if (component->driver->close)
 		ret = component->driver->close(component, substream);
+	else if (component->driver->ops && component->driver->ops->close)
+		ret = component->driver->ops->close(substream);
 
 	/* remove marked substream */
 	soc_component_mark_pop(component, substream, open);
@@ -494,6 +498,9 @@ int snd_soc_component_compr_open(struct snd_soc_component *component,
 	if (component->driver->compress_ops &&
 	    component->driver->compress_ops->open)
 		ret = component->driver->compress_ops->open(component, cstream);
+	else if (component->driver->compr_ops &&
+		 component->driver->compr_ops->open)
+		ret = component->driver->compr_ops->open(cstream);
 
 	/* mark substream if succeeded */
 	if (ret == 0)
@@ -513,6 +520,9 @@ void snd_soc_component_compr_free(struct snd_soc_component *component,
 	if (component->driver->compress_ops &&
 	    component->driver->compress_ops->free)
 		component->driver->compress_ops->free(component, cstream);
+	else if (component->driver->compr_ops &&
+		 component->driver->compr_ops->free)
+		component->driver->compr_ops->free(cstream);
 
 	/* remove marked substream */
 	soc_component_mark_pop(component, cstream, compr_open);
@@ -530,6 +540,11 @@ int snd_soc_component_compr_trigger(struct snd_compr_stream *cstream, int cmd)
 		    component->driver->compress_ops->trigger) {
 			ret = component->driver->compress_ops->trigger(
 				component, cstream, cmd);
+			if (ret < 0)
+				return soc_component_ret(component, ret);
+		} else if (component->driver->compr_ops &&
+			   component->driver->compr_ops->trigger) {
+			ret = component->driver->compr_ops->trigger(cstream, cmd);
 			if (ret < 0)
 				return soc_component_ret(component, ret);
 		}
@@ -551,6 +566,11 @@ int snd_soc_component_compr_set_params(struct snd_compr_stream *cstream,
 		    component->driver->compress_ops->set_params) {
 			ret = component->driver->compress_ops->set_params(
 				component, cstream, params);
+			if (ret < 0)
+				return soc_component_ret(component, ret);
+		} else if (component->driver->compr_ops &&
+			   component->driver->compr_ops->set_params) {
+			ret = component->driver->compr_ops->set_params(cstream, params);
 			if (ret < 0)
 				return soc_component_ret(component, ret);
 		}
@@ -594,6 +614,10 @@ int snd_soc_component_compr_get_caps(struct snd_compr_stream *cstream,
 		    component->driver->compress_ops->get_caps) {
 			ret = component->driver->compress_ops->get_caps(
 				component, cstream, caps);
+			break;
+		} else if (component->driver->compr_ops &&
+			   component->driver->compr_ops->get_caps) {
+			ret = component->driver->compr_ops->get_caps(cstream, caps);
 			break;
 		}
 	}
@@ -704,6 +728,11 @@ int snd_soc_component_compr_set_metadata(struct snd_compr_stream *cstream,
 		    component->driver->compress_ops->set_metadata) {
 			ret = component->driver->compress_ops->set_metadata(
 				component, cstream, metadata);
+			if (ret < 0)
+				return soc_component_ret(component, ret);
+		} else if (component->driver->compr_ops &&
+			   component->driver->compr_ops->set_metadata) {
+			ret = component->driver->compr_ops->set_metadata(cstream, metadata);
 			if (ret < 0)
 				return soc_component_ret(component, ret);
 		}
@@ -982,9 +1011,12 @@ int snd_soc_pcm_component_pointer(struct snd_pcm_substream *substream)
 	int i;
 
 	/* FIXME: use 1st pointer */
-	for_each_rtd_components(rtd, i, component)
+	for_each_rtd_components(rtd, i, component) {
 		if (component->driver->pointer)
 			return component->driver->pointer(component, substream);
+		if (component->driver->ops && component->driver->ops->pointer)
+			return component->driver->ops->pointer(substream);
+	}
 
 	return 0;
 }
@@ -1019,10 +1051,12 @@ void snd_soc_pcm_component_delay(struct snd_pcm_substream *substream,
 	 * just the maximum of all Components.
 	 */
 	for_each_rtd_components(rtd, i, component) {
-		if (!component->driver->delay)
+		if (component->driver->delay)
+			delay = component->driver->delay(component, substream);
+		else if (component->driver->delay_blk)
+			delay = component->driver->delay_blk(substream, snd_soc_rtd_to_cpu(rtd, 0));
+		else
 			continue;
-
-		delay = component->driver->delay(component, substream);
 
 		if (snd_soc_component_is_codec_on_rtd(rtd, component))
 			*codec_delay = max(*codec_delay, delay);
@@ -1039,12 +1073,17 @@ int snd_soc_pcm_component_ioctl(struct snd_pcm_substream *substream,
 	int i;
 
 	/* FIXME: use 1st ioctl */
-	for_each_rtd_components(rtd, i, component)
+	for_each_rtd_components(rtd, i, component) {
 		if (component->driver->ioctl)
 			return soc_component_ret(
 				component,
 				component->driver->ioctl(component,
 							 substream, cmd, arg));
+		if (component->driver->ops && component->driver->ops->ioctl)
+			return soc_component_ret(
+				component,
+				component->driver->ops->ioctl(substream, cmd, arg));
+	}
 
 	return snd_pcm_lib_ioctl(substream, cmd, arg);
 }
@@ -1076,11 +1115,16 @@ int snd_soc_pcm_component_copy(struct snd_pcm_substream *substream,
 	int i;
 
 	/* FIXME. it returns 1st copy now */
-	for_each_rtd_components(rtd, i, component)
+	for_each_rtd_components(rtd, i, component) {
 		if (component->driver->copy)
 			return soc_component_ret(component,
 				component->driver->copy(component, substream,
 					channel, pos, iter, bytes));
+		if (component->driver->ops && component->driver->ops->copy)
+			return soc_component_ret(component,
+				component->driver->ops->copy(substream,
+					channel, pos, iter, bytes));
+	}
 
 	return -EINVAL;
 }
@@ -1114,12 +1158,17 @@ int snd_soc_pcm_component_mmap(struct snd_pcm_substream *substream,
 	int i;
 
 	/* FIXME. it returns 1st mmap now */
-	for_each_rtd_components(rtd, i, component)
+	for_each_rtd_components(rtd, i, component) {
 		if (component->driver->mmap)
 			return soc_component_ret(
 				component,
 				component->driver->mmap(component,
 							substream, vma));
+		if (component->driver->ops && component->driver->ops->mmap)
+			return soc_component_ret(
+				component,
+				component->driver->ops->mmap(substream, vma));
+	}
 
 	return -EINVAL;
 }
@@ -1133,6 +1182,10 @@ int snd_soc_pcm_component_new(struct snd_soc_pcm_runtime *rtd)
 	for_each_rtd_components(rtd, i, component) {
 		if (component->driver->pcm_construct) {
 			ret = component->driver->pcm_construct(component, rtd);
+			if (ret < 0)
+				return soc_component_ret(component, ret);
+		} else if (component->driver->pcm_new) {
+			ret = component->driver->pcm_new(rtd);
 			if (ret < 0)
 				return soc_component_ret(component, ret);
 		}
@@ -1149,9 +1202,12 @@ void snd_soc_pcm_component_free(struct snd_soc_pcm_runtime *rtd)
 	if (!rtd->pcm)
 		return;
 
-	for_each_rtd_components(rtd, i, component)
+	for_each_rtd_components(rtd, i, component) {
 		if (component->driver->pcm_destruct)
 			component->driver->pcm_destruct(component, rtd->pcm);
+		if (component->driver->pcm_free)
+			component->driver->pcm_free(rtd->pcm);
+	}
 }
 
 int snd_soc_pcm_component_prepare(struct snd_pcm_substream *substream)
@@ -1163,6 +1219,10 @@ int snd_soc_pcm_component_prepare(struct snd_pcm_substream *substream)
 	for_each_rtd_components(rtd, i, component) {
 		if (component->driver->prepare) {
 			ret = component->driver->prepare(component, substream);
+			if (ret < 0)
+				return soc_component_ret(component, ret);
+		} else if (component->driver->ops && component->driver->ops->prepare) {
+			ret = component->driver->ops->prepare(substream);
 			if (ret < 0)
 				return soc_component_ret(component, ret);
 		}
@@ -1182,6 +1242,10 @@ int snd_soc_pcm_component_hw_params(struct snd_pcm_substream *substream,
 		if (component->driver->hw_params) {
 			ret = component->driver->hw_params(component,
 							   substream, params);
+			if (ret < 0)
+				return soc_component_ret(component, ret);
+		} else if (component->driver->ops && component->driver->ops->hw_params) {
+			ret = component->driver->ops->hw_params(substream, params);
 			if (ret < 0)
 				return soc_component_ret(component, ret);
 		}
@@ -1207,6 +1271,10 @@ void snd_soc_pcm_component_hw_free(struct snd_pcm_substream *substream,
 			ret = component->driver->hw_free(component, substream);
 			if (ret < 0)
 				soc_component_ret(component, ret);
+		} else if (component->driver->ops && component->driver->ops->hw_free) {
+			ret = component->driver->ops->hw_free(substream);
+			if (ret < 0)
+				soc_component_ret(component, ret);
 		}
 
 		/* remove marked substream */
@@ -1222,6 +1290,8 @@ static int soc_component_trigger(struct snd_soc_component *component,
 
 	if (component->driver->trigger)
 		ret = component->driver->trigger(component, substream, cmd);
+	else if (component->driver->ops && component->driver->ops->trigger)
+		ret = component->driver->ops->trigger(substream, cmd);
 
 	return soc_component_ret(component, ret);
 }

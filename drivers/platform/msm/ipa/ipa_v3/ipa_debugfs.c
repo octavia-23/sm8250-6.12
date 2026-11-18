@@ -1251,8 +1251,8 @@ static ssize_t ipa3_read_stats(struct file *file, char __user *ubuf,
 		"flow_enable=%u\n"
 		"flow_disable=%u\n"
 		"rx_page_drop_cnt=%u\n"
-		"zero_len_frag_pkt_cnt=%u\n",
-		"lower_order=%u\n",
+		"zero_len_frag_pkt_cnt=%u\n"
+		"lower_order=%llu\n",
 		ipa3_ctx->stats.tx_sw_pkts,
 		ipa3_ctx->stats.tx_hw_pkts,
 		ipa3_ctx->stats.tx_non_linear,
@@ -2855,13 +2855,8 @@ void ipa3_debugfs_init(void)
 		return;
 	}
 
-	file = debugfs_create_u32("hw_type", IPA_READ_ONLY_MODE,
+	debugfs_create_u32("hw_type", IPA_READ_ONLY_MODE,
 		dent, &ipa3_ctx->ipa_hw_type);
-	if (!file) {
-		IPAERR("could not create hw_type file\n");
-		goto fail;
-	}
-
 
 	for (i = 0; i < debugfs_files_num; ++i) {
 		const struct ipa3_debugfs_file *curr = &debugfs_files[i];
@@ -2881,42 +2876,22 @@ void ipa3_debugfs_init(void)
 	if (active_clients_buf == NULL)
 		goto fail;
 
-	file = debugfs_create_u32("enable_clock_scaling", IPA_READ_WRITE_MODE,
+	debugfs_create_u32("enable_clock_scaling", IPA_READ_WRITE_MODE,
 		dent, &ipa3_ctx->enable_clock_scaling);
-	if (!file) {
-		IPAERR("could not create enable_clock_scaling file\n");
-		goto fail;
-	}
 
-	file = debugfs_create_u32("enable_napi_chain", IPA_READ_WRITE_MODE,
+	debugfs_create_u32("enable_napi_chain", IPA_READ_WRITE_MODE,
 		dent, &ipa3_ctx->enable_napi_chain);
-	if (!file) {
-		IPAERR("could not create enable_napi_chain file\n");
-		goto fail;
-	}
 
-	file = debugfs_create_u32("clock_scaling_bw_threshold_nominal_mbps",
+	debugfs_create_u32("clock_scaling_bw_threshold_nominal_mbps",
 		IPA_READ_WRITE_MODE, dent,
 		&ipa3_ctx->ctrl->clock_scaling_bw_threshold_nominal);
-	if (!file) {
-		IPAERR("could not create bw_threshold_nominal_mbps\n");
-		goto fail;
-	}
 
-	file = debugfs_create_u32("clock_scaling_bw_threshold_turbo_mbps",
+	debugfs_create_u32("clock_scaling_bw_threshold_turbo_mbps",
 			IPA_READ_WRITE_MODE, dent,
 			&ipa3_ctx->ctrl->clock_scaling_bw_threshold_turbo);
-	if (!file) {
-		IPAERR("could not create bw_threshold_turbo_mbps\n");
-		goto fail;
-	}
 
-	file = debugfs_create_u32("clk_rate", IPA_READ_ONLY_MODE,
+	debugfs_create_u32("clk_rate", IPA_READ_ONLY_MODE,
 		dent, &ipa3_ctx->curr_ipa_clk_rate);
-	if (!file) {
-		IPAERR("could not create clk_rate file\n");
-		goto fail;
-	}
 
 	ipa_debugfs_init_stats(dent);
 

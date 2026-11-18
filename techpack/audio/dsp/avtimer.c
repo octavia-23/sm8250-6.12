@@ -334,29 +334,29 @@ int avcs_core_query_timer_offset(int64_t *av_offset, int32_t clock_id)
 {
 	uint32_t avtimer_msw = 0, avtimer_lsw = 0;
 	uint64_t avtimer_tick_temp, avtimer_tick, sys_time = 0;
-	struct timespec ts;
+	struct timespec64 ts;
 
 	if ((avtimer.p_avtimer_lsw == NULL) ||
 	    (avtimer.p_avtimer_msw == NULL)) {
 		return -EINVAL;
 	}
 
-	memset(&ts, 0, sizeof(struct timespec));
+	memset(&ts, 0, sizeof(struct timespec64));
 	avtimer_lsw = ioread32(avtimer.p_avtimer_lsw);
 	avtimer_msw = ioread32(avtimer.p_avtimer_msw);
 
 	switch (clock_id) {
 	case CLOCK_MONOTONIC_RAW:
-		getrawmonotonic(&ts);
+		ktime_get_raw_ts64(&ts);
 		break;
 	case CLOCK_BOOTTIME:
-		get_monotonic_boottime(&ts);
+		ktime_get_boottime_ts64(&ts);
 		break;
 	case CLOCK_MONOTONIC:
-		ktime_get_ts(&ts);
+		ktime_get_ts64(&ts);
 		break;
 	case CLOCK_REALTIME:
-		ktime_get_real_ts(&ts);
+		ktime_get_real_ts64(&ts);
 		break;
 	default:
 		pr_debug("%s: unsupported clock id %d\n", __func__, clock_id);
@@ -483,7 +483,7 @@ static int dev_avtimer_probe(struct platform_device *pdev)
 	}
 	INIT_DELAYED_WORK(&avtimer.ssr_dwork, reset_work);
 
-	avtimer.p_avtimer_lsw = devm_ioremap_nocache(&pdev->dev,
+	avtimer.p_avtimer_lsw = devm_ioremap(&pdev->dev,
 				reg_lsb->start, resource_size(reg_lsb));
 	if (!avtimer.p_avtimer_lsw) {
 		dev_err(&pdev->dev, "%s: ioremap failed for lsb avtimer register",
@@ -491,7 +491,7 @@ static int dev_avtimer_probe(struct platform_device *pdev)
 		return -ENOMEM;
 	}
 
-	avtimer.p_avtimer_msw = devm_ioremap_nocache(&pdev->dev,
+	avtimer.p_avtimer_msw = devm_ioremap(&pdev->dev,
 				reg_msb->start, resource_size(reg_msb));
 	if (!avtimer.p_avtimer_msw) {
 		dev_err(&pdev->dev, "%s: ioremap failed for msb avtimer register",
@@ -513,7 +513,7 @@ static int dev_avtimer_probe(struct platform_device *pdev)
 		goto unmap;
 	}
 
-	avtimer.avtimer_class = class_create(THIS_MODULE, "avtimer");
+	avtimer.avtimer_class = class_create("avtimer");
 	if (IS_ERR(avtimer.avtimer_class)) {
 		result = PTR_ERR(avtimer.avtimer_class);
 		dev_err(&pdev->dev, "%s: Error creating avtimer class: %d\n",
@@ -577,7 +577,7 @@ unmap:
 
 }
 
-static int dev_avtimer_remove(struct platform_device *pdev)
+static void dev_avtimer_remove(struct platform_device *pdev)
 {
 	pr_debug("%s: dev_avtimer_remove\n", __func__);
 
@@ -590,8 +590,6 @@ static int dev_avtimer_remove(struct platform_device *pdev)
 	class_destroy(avtimer.avtimer_class);
 	unregister_chrdev_region(MKDEV(major, 0), 1);
 	avcs_set_isp_fptr(false);
-
-	return 0;
 }
 
 static const struct of_device_id avtimer_machine_of_match[]  = {

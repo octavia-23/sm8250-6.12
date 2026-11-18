@@ -25,7 +25,7 @@
 
 #include "wm_adsp.h"
 #include "cs35l41.h"
-#include <sound/cs35l41.h>
+#include <uapi/sound/cs35l41.h>
 
 static struct regmap_config cs35l41_regmap_spi = {
 	.reg_bits = 32,
@@ -80,7 +80,7 @@ static int cs35l41_spi_probe(struct spi_device *spi)
 	return cs35l41_probe(cs35l41, pdata);
 }
 
-static int cs35l41_spi_remove(struct spi_device *spi)
+static void cs35l41_spi_remove(struct spi_device *spi)
 {
 	struct cs35l41_private *cs35l41 = spi_get_drvdata(spi);
 
@@ -88,7 +88,6 @@ static int cs35l41_spi_remove(struct spi_device *spi)
 	wm_adsp2_remove(&cs35l41->dsp);
 	regulator_bulk_disable(cs35l41->num_supplies, cs35l41->supplies);
 	snd_soc_unregister_component(cs35l41->dev);
-	return 0;
 }
 
 static const struct of_device_id cs35l41_of_match[] = {

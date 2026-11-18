@@ -10,6 +10,8 @@
 #include <linux/string.h>
 #include <linux/delay.h>
 #include <linux/platform_device.h>
+#include <linux/of.h>
+#include <linux/of_platform.h>
 #include <ipc/apr.h>
 #include <linux/of_device.h>
 #include <linux/sysfs.h>
@@ -297,14 +299,14 @@ error_return:
 	return ret;
 }
 
-static int adsp_loader_remove(struct platform_device *pdev)
+static void adsp_loader_remove(struct platform_device *pdev)
 {
 	struct adsp_loader_private *priv = NULL;
 
 	priv = platform_get_drvdata(pdev);
 
 	if (!priv)
-		return 0;
+		return;
 
 	if (priv->pil_h) {
 		subsystem_put(priv->pil_h);
@@ -316,8 +318,6 @@ static int adsp_loader_remove(struct platform_device *pdev)
 		kobject_del(priv->boot_adsp_obj);
 		priv->boot_adsp_obj = NULL;
 	}
-
-	return 0;
 }
 
 static int adsp_loader_probe(struct platform_device *pdev)

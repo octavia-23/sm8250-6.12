@@ -725,7 +725,7 @@ ol_rx_defrag(ol_txrx_pdev_handle pdev,
 	switch (peer->security[index].sec_type) {
 	case htt_sec_type_tkip:
 		tkip_demic = 1;
-	/* fall-through to rest of tkip ops */
+		fallthrough;
 	case htt_sec_type_tkip_nomic:
 		while (cur) {
 			tmp_next = qdf_nbuf_next(cur);

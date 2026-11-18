@@ -353,10 +353,10 @@ struct rx_macro_bcl_pmic_params {
 static int rx_macro_hw_params(struct snd_pcm_substream *substream,
 			       struct snd_pcm_hw_params *params,
 			       struct snd_soc_dai *dai);
-static int rx_macro_get_channel_map(struct snd_soc_dai *dai,
+static int rx_macro_get_channel_map(const struct snd_soc_dai *dai,
 				unsigned int *tx_num, unsigned int *tx_slot,
 				unsigned int *rx_num, unsigned int *rx_slot);
-static int rx_macro_digital_mute(struct snd_soc_dai *dai, int mute);
+static int rx_macro_digital_mute(struct snd_soc_dai *dai, int mute, int direction);
 static int rx_macro_int_dem_inp_mux_put(struct snd_kcontrol *kcontrol,
 				     struct snd_ctl_elem_value *ucontrol);
 static int rx_macro_mux_get(struct snd_kcontrol *kcontrol,
@@ -651,7 +651,7 @@ static const struct snd_kcontrol_new rx_mix_tx0_mux =
 static struct snd_soc_dai_ops rx_macro_dai_ops = {
 	.hw_params = rx_macro_hw_params,
 	.get_channel_map = rx_macro_get_channel_map,
-	.digital_mute = rx_macro_digital_mute,
+	.mute_stream = rx_macro_digital_mute,
 };
 
 static struct snd_soc_dai_driver rx_macro_dai[] = {
@@ -1085,7 +1085,7 @@ static int rx_macro_hw_params(struct snd_pcm_substream *substream,
 	return 0;
 }
 
-static int rx_macro_get_channel_map(struct snd_soc_dai *dai,
+static int rx_macro_get_channel_map(const struct snd_soc_dai *dai,
 				unsigned int *tx_num, unsigned int *tx_slot,
 				unsigned int *rx_num, unsigned int *rx_slot)
 {
@@ -1157,7 +1157,7 @@ static int rx_macro_get_channel_map(struct snd_soc_dai *dai,
 	return 0;
 }
 
-static int rx_macro_digital_mute(struct snd_soc_dai *dai, int mute)
+static int rx_macro_digital_mute(struct snd_soc_dai *dai, int mute, int direction)
 {
 	struct snd_soc_component *component = dai->component;
 	struct device *rx_dev = NULL;
@@ -4182,7 +4182,7 @@ err_reg_macro:
 	return ret;
 }
 
-static int rx_macro_remove(struct platform_device *pdev)
+static void rx_macro_remove(struct platform_device *pdev)
 {
 	struct rx_macro_priv *rx_priv = NULL;
 	u16 count = 0;
@@ -4190,7 +4190,7 @@ static int rx_macro_remove(struct platform_device *pdev)
 	rx_priv = dev_get_drvdata(&pdev->dev);
 
 	if (!rx_priv)
-		return -EINVAL;
+		return;
 
 	for (count = 0; count < rx_priv->child_count &&
 		count < RX_MACRO_CHILD_DEVICES_MAX; count++)
@@ -4202,7 +4202,6 @@ static int rx_macro_remove(struct platform_device *pdev)
 	mutex_destroy(&rx_priv->mclk_lock);
 	mutex_destroy(&rx_priv->swr_clk_lock);
 	kfree(rx_priv->swr_ctrl_data);
-	return 0;
 }
 
 static const struct of_device_id rx_macro_dt_match[] = {

@@ -2114,7 +2114,7 @@ static int q6lsm_mmapcallback(struct apr_client_data *data, void *priv)
 			pr_warn("%s: Unexpected command 0x%x\n", __func__,
 				command);
 		}
-		/* fallthrough */
+		fallthrough;
 	default:
 		pr_debug("%s: command 0x%x return code 0x%x opcode 0x%x\n",
 			 __func__, command, retcode, data->opcode);

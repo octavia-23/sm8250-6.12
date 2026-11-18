@@ -703,6 +703,7 @@ static void htt_t2h_lp_msg_handler(void *context, qdf_nbuf_t htt_t2h_msg,
 		break;
 		}
 		}
+		break;
 	}
 
 	default:
@@ -1071,7 +1072,7 @@ void htt_t2h_msg_handler(void *context, HTC_PACKET *pkt)
 					(QDF_NBUF_CB_PADDR(_buf)),	\
 					(skb_end_pointer(_buf) -	\
 					(_buf)->data),			\
-					PCI_DMA_FROMDEVICE);		\
+					DMA_FROM_DEVICE);		\
 	} while (0)
 
 /**

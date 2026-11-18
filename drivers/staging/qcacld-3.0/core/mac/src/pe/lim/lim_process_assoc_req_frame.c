@@ -1845,7 +1845,7 @@ static bool lim_update_sta_ds(struct mac_context *mac_ctx, tpSirMacMgmtHdr hdr,
  * Return: true of no error, false otherwise
  */
 static bool lim_update_sta_ctx(struct mac_context *mac_ctx, struct pe_session *session,
-			       tpSirAssocReq assoc_req, uint8_t sub_type,
+			       uint8_t sub_type,
 			       tpDphHashNode sta_ds, uint8_t update_ctx)
 {
 	tLimMlmStates mlm_prev_state;
@@ -1876,9 +1876,6 @@ static bool lim_update_sta_ctx(struct mac_context *mac_ctx, struct pe_session *s
 				eSIR_MAC_UNSPEC_FAILURE_STATUS,
 				session);
 
-			if (session->parsedAssocReq)
-				assoc_req =
-				    session->parsedAssocReq[sta_ds->assocId];
 			return false;
 		}
 	} else {
@@ -1910,9 +1907,6 @@ static bool lim_update_sta_ctx(struct mac_context *mac_ctx, struct pe_session *s
 
 				/* Restoring the state back. */
 				sta_ds->mlmStaContext.mlmState = mlm_prev_state;
-				if (session->parsedAssocReq)
-					assoc_req = session->parsedAssocReq[
-						sta_ds->assocId];
 				return false;
 			}
 		} else {
@@ -1932,9 +1926,6 @@ static bool lim_update_sta_ctx(struct mac_context *mac_ctx, struct pe_session *s
 
 				/* Restoring the state back. */
 				sta_ds->mlmStaContext.mlmState = mlm_prev_state;
-				if (session->parsedAssocReq)
-					assoc_req = session->parsedAssocReq[
-							sta_ds->assocId];
 				return false;
 			}
 		}
@@ -2149,7 +2140,7 @@ send_ind_to_sme:
 
 	/* If it is duplicate entry wait till the peer is deleted */
 	if (!dup_entry) {
-		if (!lim_update_sta_ctx(mac_ctx, session, assoc_req,
+		if (!lim_update_sta_ctx(mac_ctx, session,
 					sub_type, sta_ds, update_ctx))
 			return false;
 	}

@@ -893,7 +893,7 @@ static int odu_bridge_add_hdrs(void)
 	}
 	ipv4_hdr = &hdrs->hdr[0];
 	eth_ipv4 = (struct ethhdr *)(ipv4_hdr->hdr);
-	ipv6_hdr = &hdrs->hdr[1];
+	ipv6_hdr = &hdrs->hdr[0] + 1;
 	eth_ipv6 = (struct ethhdr *)(ipv6_hdr->hdr);
 	strlcpy(ipv4_hdr->name, ODU_BRIDGE_IPV4_HDR_NAME,
 		IPA_RESOURCE_NAME_MAX);
@@ -956,7 +956,7 @@ static void odu_bridge_del_hdrs(void)
 	del_hdr->num_hdls = 2;
 	ipv4 = &del_hdr->hdl[0];
 	ipv4->hdl = odu_bridge_ctx->odu_br_ipv4_hdr_hdl;
-	ipv6 = &del_hdr->hdl[1];
+	ipv6 = &del_hdr->hdl[0] + 1;
 	ipv6->hdl = odu_bridge_ctx->odu_br_ipv6_hdr_hdl;
 	result = ipa_del_hdr(del_hdr);
 	if (result || ipv4->status || ipv6->status)
@@ -1090,7 +1090,7 @@ int odu_bridge_init(struct odu_bridge_params *params)
 		return -ENOMEM;
 	}
 
-	odu_bridge_ctx->class = class_create(THIS_MODULE, ODU_BRIDGE_DRV_NAME);
+	odu_bridge_ctx->class = class_create(ODU_BRIDGE_DRV_NAME);
 	if (!odu_bridge_ctx->class) {
 		ODU_BRIDGE_ERR("Class_create err.\n");
 		res = -ENODEV;

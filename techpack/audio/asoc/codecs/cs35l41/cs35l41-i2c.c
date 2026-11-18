@@ -30,7 +30,7 @@
 
 #include "wm_adsp.h"
 #include "cs35l41.h"
-#include <sound/cs35l41.h>
+#include <uapi/sound/cs35l41.h>
 
 static struct regmap_config cs35l41_regmap_i2c = {
 	.reg_bits = 32,
@@ -55,8 +55,7 @@ static const struct i2c_device_id cs35l41_id_i2c[] = {
 
 MODULE_DEVICE_TABLE(i2c, cs35l41_id_i2c);
 
-static int cs35l41_i2c_probe(struct i2c_client *client,
-			     const struct i2c_device_id *id)
+static int cs35l41_i2c_probe(struct i2c_client *client)
 {
 	struct cs35l41_private *cs35l41;
 	struct device *dev = &client->dev;
@@ -89,7 +88,7 @@ static int cs35l41_i2c_probe(struct i2c_client *client,
 	return cs35l41_probe(cs35l41, pdata);
 }
 
-static int cs35l41_i2c_remove(struct i2c_client *client)
+static void cs35l41_i2c_remove(struct i2c_client *client)
 {
 	struct cs35l41_private *cs35l41 = i2c_get_clientdata(client);
 
@@ -97,7 +96,6 @@ static int cs35l41_i2c_remove(struct i2c_client *client)
 	wm_adsp2_remove(&cs35l41->dsp);
 	regulator_bulk_disable(cs35l41->num_supplies, cs35l41->supplies);
 	snd_soc_unregister_component(cs35l41->dev);
-	return 0;
 }
 
 static const struct of_device_id cs35l41_of_match[] = {

@@ -643,15 +643,13 @@ static int audio_ref_clk_probe(struct platform_device *pdev)
 	return 0;
 }
 
-static int audio_ref_clk_remove(struct platform_device *pdev)
+static void audio_ref_clk_remove(struct platform_device *pdev)
 {
 	struct audio_ext_clk_priv *clk_priv = platform_get_drvdata(pdev);
 
 	audio_put_pinctrl(pdev);
 	if (clk_priv->audio_clk.gpio > 0)
 		gpio_free(clk_priv->audio_clk.gpio);
-
-	return 0;
 }
 
 static const struct of_device_id audio_ref_clk_match[] = {

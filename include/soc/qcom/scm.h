@@ -41,12 +41,13 @@
 #define SCM_ARGS_SHIFT	4
 #define SCM_MAX_ARGS	10
 
-#define SCM_ARGS(n, a, b, c, d) \
+#define __SCM_ARGS(n, a, b, c, d, ...) \
 	((((n) & 0xF) | \
 	 (((a) & 0x3) << 4) | \
 	 (((b) & 0x3) << 6) | \
 	 (((c) & 0x3) << 8) | \
 	 (((d) & 0x3) << 10)))
+#define SCM_ARGS(...) __SCM_ARGS(__VA_ARGS__, 0, 0, 0, 0)
 
 #define SCM_BUFFER_PHYS(b) virt_to_phys(b)
 

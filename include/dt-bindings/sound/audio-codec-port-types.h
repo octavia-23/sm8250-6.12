@@ -25,9 +25,22 @@
 #define ADC2            14
 #define ADC3            15
 #define ADC4            16
-#define DMIC1           17
-#define DMIC2           18
-#define DMIC3           19
-#define DMIC4           20
+#define DMIC0           17
+#define DMIC1           18
+#define DMIC2           19
+#define DMIC3           20
+#define DMIC4           21
+#define DMIC5           22
+#define DMIC6           23
+#define DMIC7           24
+
+/* Headphone, Class-H, Compander, Lineout, MBHC Port Types */
+#define HPH_L           25
+#define HPH_R           26
+#define COMP_L          27
+#define COMP_R          28
+#define CLSH            29
+#define LO              30
+#define MBHC            31
 
 #endif /* __AUDIO_CODEC_PORT_TYPES_H */

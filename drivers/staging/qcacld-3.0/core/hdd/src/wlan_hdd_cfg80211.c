@@ -17163,12 +17163,16 @@ static int __wlan_hdd_cfg80211_change_iface(struct wiphy *wiphy,
 				 * a randomized MAC address of the
 				 * form 02:1A:11:Fx:xx:xx
 				 */
-				get_random_bytes(&ndev->dev_addr[3], 3);
-				ndev->dev_addr[0] = 0x02;
-				ndev->dev_addr[1] = 0x1A;
-				ndev->dev_addr[2] = 0x11;
-				ndev->dev_addr[3] |= 0xF0;
-				memcpy(adapter->mac_addr.bytes, ndev->dev_addr,
+				u8 rand_addr[ETH_ALEN];
+
+				memcpy(rand_addr, ndev->dev_addr, ETH_ALEN);
+				get_random_bytes(&rand_addr[3], 3);
+				rand_addr[0] = 0x02;
+				rand_addr[1] = 0x1A;
+				rand_addr[2] = 0x11;
+				rand_addr[3] |= 0xF0;
+				eth_hw_addr_set(ndev, rand_addr);
+				memcpy(adapter->mac_addr.bytes, rand_addr,
 				       QDF_MAC_ADDR_SIZE);
 				pr_info("wlan: Generated HotSpot BSSID "
 					QDF_MAC_ADDR_FMT "\n",
@@ -17758,11 +17762,20 @@ static int __wlan_hdd_cfg80211_add_key(struct wiphy *wiphy,
 	return errno;
 }
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0))
+static int wlan_hdd_cfg80211_add_key(struct wiphy *wiphy,
+				     struct net_device *ndev,
+				     int link_id,
+				     u8 key_index, bool pairwise,
+				     const u8 *mac_addr,
+				     struct key_params *params)
+#else
 static int wlan_hdd_cfg80211_add_key(struct wiphy *wiphy,
 				     struct net_device *ndev,
 				     u8 key_index, bool pairwise,
 				     const u8 *mac_addr,
 				     struct key_params *params)
+#endif
 {
 	int errno;
 	struct osif_vdev_sync *vdev_sync;
@@ -17878,6 +17891,16 @@ static int __wlan_hdd_cfg80211_get_key(struct wiphy *wiphy,
 	return 0;
 }
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0))
+static int wlan_hdd_cfg80211_get_key(struct wiphy *wiphy,
+				     struct net_device *ndev,
+				     int link_id,
+				     u8 key_index, bool pairwise,
+				     const u8 *mac_addr, void *cookie,
+				     void (*callback)(void *cookie,
+						      struct key_params *)
+				     )
+#else
 static int wlan_hdd_cfg80211_get_key(struct wiphy *wiphy,
 				     struct net_device *ndev,
 				     u8 key_index, bool pairwise,
@@ -17885,6 +17908,7 @@ static int wlan_hdd_cfg80211_get_key(struct wiphy *wiphy,
 				     void (*callback)(void *cookie,
 						      struct key_params *)
 				     )
+#endif
 {
 	int errno;
 	struct osif_vdev_sync *vdev_sync;
@@ -17944,10 +17968,18 @@ static int __wlan_hdd_cfg80211_del_key(struct wiphy *wiphy,
  *
  * Return: 0 for success, error number on failure.
  */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0))
+static int wlan_hdd_cfg80211_del_key(struct wiphy *wiphy,
+					struct net_device *dev,
+					int link_id,
+					u8 key_index,
+					bool pairwise, const u8 *mac_addr)
+#else
 static int wlan_hdd_cfg80211_del_key(struct wiphy *wiphy,
 					struct net_device *dev,
 					u8 key_index,
 					bool pairwise, const u8 *mac_addr)
+#endif
 {
 	int errno;
 	struct osif_vdev_sync *vdev_sync;
@@ -18037,10 +18069,18 @@ static int __wlan_hdd_cfg80211_set_default_key(struct wiphy *wiphy,
 	return ret;
 }
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0))
+static int wlan_hdd_cfg80211_set_default_key(struct wiphy *wiphy,
+					     struct net_device *ndev,
+					     int link_id,
+					     u8 key_index,
+					     bool unicast, bool multicast)
+#else
 static int wlan_hdd_cfg80211_set_default_key(struct wiphy *wiphy,
 					     struct net_device *ndev,
 					     u8 key_index,
 					     bool unicast, bool multicast)
+#endif
 {
 	int errno;
 	struct osif_vdev_sync *vdev_sync;
@@ -21897,9 +21937,16 @@ static int __wlan_hdd_set_default_mgmt_key(struct wiphy *wiphy,
  *
  * Return: 0 on success, error number on failure
  */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0))
+static int wlan_hdd_set_default_mgmt_key(struct wiphy *wiphy,
+					   struct net_device *netdev,
+					   int link_id,
+					   u8 key_index)
+#else
 static int wlan_hdd_set_default_mgmt_key(struct wiphy *wiphy,
 					   struct net_device *netdev,
 					   u8 key_index)
+#endif
 {
 	int errno;
 	struct osif_vdev_sync *vdev_sync;
@@ -23621,10 +23668,18 @@ __wlan_hdd_cfg80211_set_ap_channel_width(struct wiphy *wiphy,
  *
  * Return: 0 for success, non-zero for failure
  */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
+static int
+wlan_hdd_cfg80211_set_ap_channel_width(struct wiphy *wiphy,
+				       struct net_device *dev,
+				       unsigned int link_id,
+				       struct cfg80211_chan_def *chandef)
+#else
 static int
 wlan_hdd_cfg80211_set_ap_channel_width(struct wiphy *wiphy,
 				       struct net_device *dev,
 				       struct cfg80211_chan_def *chandef)
+#endif
 {
 	int errno;
 	struct osif_vdev_sync *vdev_sync;
@@ -23975,8 +24030,14 @@ static int __wlan_hdd_cfg80211_set_mon_ch(struct wiphy *wiphy,
  *
  * Return: 0 success or error code on failure.
  */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0))
+static int wlan_hdd_cfg80211_set_mon_ch(struct wiphy *wiphy,
+				       struct net_device *dev,
+				       struct cfg80211_chan_def *chandef)
+#else
 static int wlan_hdd_cfg80211_set_mon_ch(struct wiphy *wiphy,
 				       struct cfg80211_chan_def *chandef)
+#endif
 {
 	struct osif_psoc_sync *psoc_sync;
 	int errno;

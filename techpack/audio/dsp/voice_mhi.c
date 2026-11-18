@@ -90,7 +90,7 @@ static struct voice_mhi voice_mhi_lcl;
 static int voice_mhi_pcie_up_callback(struct mhi_device *,
 					const struct mhi_device_id *);
 static void voice_mhi_pcie_down_callback(struct mhi_device *);
-static void voice_mhi_pcie_status_callback(struct mhi_device *, enum MHI_CB);
+static void voice_mhi_pcie_status_callback(struct mhi_device *, enum mhi_callback);
 static int32_t voice_mhi_apr_callback(struct apr_client_data *data, void *priv);
 static int voice_mhi_notifier_service_cb(struct notifier_block *nb,
 					 unsigned long opcode, void *ptr);
@@ -228,8 +228,7 @@ int voice_mhi_start(void)
 			goto done;
 		}
 		if (voice_mhi_lcl.vote_count == 0) {
-			ret = mhi_device_get_sync(voice_mhi_lcl.mhi_dev,
-					MHI_VOTE_DEVICE);
+			ret = mhi_device_get_sync(voice_mhi_lcl.mhi_dev);
 			if (ret) {
 				pr_err("%s: mhi_device_get_sync failed\n",
 					   __func__);
@@ -270,7 +269,7 @@ int voice_mhi_end(void)
 		}
 
 		if (voice_mhi_lcl.vote_count == 1)
-			mhi_device_put(voice_mhi_lcl.mhi_dev, MHI_VOTE_DEVICE);
+			mhi_device_put(voice_mhi_lcl.mhi_dev);
 		voice_mhi_lcl.vote_count--;
 	}
 	mutex_unlock(&voice_mhi_lcl.mutex);
@@ -447,7 +446,7 @@ static void voice_mhi_pcie_down_callback(struct mhi_device *voice_mhi_dev)
 }
 
 static void voice_mhi_pcie_status_callback(struct mhi_device *voice_mhi_dev,
-					enum MHI_CB mhi_cb)
+					enum mhi_callback mhi_cb)
 {
 
 }
@@ -572,13 +571,12 @@ err_free:
 
 }
 
-static int voice_mhi_remove(struct platform_device *pdev)
+static void voice_mhi_remove(struct platform_device *pdev)
 {
 	if (voice_mhi_lcl.apr_mvm_handle)
 			apr_reset(voice_mhi_lcl.apr_mvm_handle);
 	mhi_driver_unregister(&voice_mhi_driver);
 	memset(&voice_mhi_lcl, 0, sizeof(voice_mhi_lcl));
-	return 0;
 }
 static const struct of_device_id voice_mhi_of_match[]  = {
 	{ .compatible = "qcom,voice-mhi-audio", },

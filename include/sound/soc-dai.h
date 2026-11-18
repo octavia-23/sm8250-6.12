@@ -415,6 +415,11 @@ struct snd_soc_dai_driver {
 	const struct snd_soc_dai_ops *ops;
 	const struct snd_soc_cdai_ops *cops;
 
+	/* legacy DAI driver callbacks */
+	int (*probe)(struct snd_soc_dai *dai);
+	int (*remove)(struct snd_soc_dai *dai);
+	int (*compress_new)(struct snd_soc_pcm_runtime *rtd, int num);
+
 	/* DAI capabilities */
 	struct snd_soc_pcm_stream capture;
 	struct snd_soc_pcm_stream playback;

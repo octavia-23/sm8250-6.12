@@ -801,7 +801,7 @@ err:
 }
 
 static int msm_pcm_playback_copy(struct snd_pcm_substream *substream, int a,
-	unsigned long hwoff, void __user *buf, unsigned long fbytes)
+	unsigned long hwoff, struct iov_iter *iter, unsigned long fbytes)
 {
 	int ret = 0;
 	struct voip_buf_node *buf_node = NULL;
@@ -834,20 +834,16 @@ static int msm_pcm_playback_copy(struct snd_pcm_substream *substream, int a,
 			list_del(&buf_node->list);
 			spin_unlock_irqrestore(&prtd->dsp_lock, dsp_flags);
 			if (prtd->mode == MODE_PCM) {
-				ret = copy_from_user(&buf_node->frame.voc_pkt,
-							buf, fbytes);
-				if (ret) {
-					pr_err("%s: copy from user failed %d\n",
-					       __func__, ret);
+				if (copy_from_iter(&buf_node->frame.voc_pkt, fbytes, iter) != fbytes) {
+					pr_err("%s: copy from iter failed\n",
+					       __func__);
 					return -EFAULT;
 				}
 				buf_node->frame.pktlen = fbytes;
 			} else {
-				ret = copy_from_user(&buf_node->frame,
-							buf, fbytes);
-				if (ret) {
-					pr_err("%s: copy from user failed %d\n",
-					       __func__, ret);
+				if (copy_from_iter(&buf_node->frame, fbytes, iter) != fbytes) {
+					pr_err("%s: copy from iter failed\n",
+					       __func__);
 					return -EFAULT;
 				}
 				if (buf_node->frame.pktlen >= fbytes)
@@ -874,7 +870,7 @@ static int msm_pcm_playback_copy(struct snd_pcm_substream *substream, int a,
 	return  ret;
 }
 static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,
-		int channel, unsigned long hwoff, void __user *buf,
+		int channel, unsigned long hwoff, struct iov_iter *iter,
 						unsigned long fbytes)
 {
 	int ret = 0;
@@ -910,22 +906,21 @@ static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,
 			list_del(&buf_node->list);
 			spin_unlock_irqrestore(&prtd->dsp_ul_lock, dsp_flags);
 			if (prtd->mode == MODE_PCM) {
-				ret = copy_to_user(buf,
-						   &buf_node->frame.voc_pkt,
-						   buf_node->frame.pktlen);
+				if (copy_to_iter(&buf_node->frame.voc_pkt, buf_node->frame.pktlen, iter) != buf_node->frame.pktlen) {
+					pr_err("%s: Copy to iter failed\n",
+						__func__);
+					ret = -EFAULT;
+				}
 			} else {
 				size = sizeof(buf_node->frame.frm_hdr) +
 				       sizeof(buf_node->frame.pktlen) +
 				       buf_node->frame.pktlen;
 
-				ret = copy_to_user(buf,
-						   &buf_node->frame,
-						   size);
-			}
-			if (ret) {
-				pr_err("%s: Copy to user returned %d\n",
-					__func__, ret);
-				ret = -EFAULT;
+				if (copy_to_iter(&buf_node->frame, size, iter) != size) {
+					pr_err("%s: Copy to iter failed\n",
+						__func__);
+					ret = -EFAULT;
+				}
 			}
 			spin_lock_irqsave(&prtd->dsp_ul_lock, dsp_flags);
 			list_add_tail(&buf_node->list,
@@ -948,14 +943,14 @@ static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,
 	return ret;
 }
 static int msm_pcm_copy(struct snd_pcm_substream *substream, int a,
-	 unsigned long hwoff, void __user *buf, unsigned long fbytes)
+	 unsigned long hwoff, struct iov_iter *iter, unsigned long fbytes)
 {
 	int ret = 0;
 
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
-		ret = msm_pcm_playback_copy(substream, a, hwoff, buf, fbytes);
+		ret = msm_pcm_playback_copy(substream, a, hwoff, iter, fbytes);
 	else if (substream->stream == SNDRV_PCM_STREAM_CAPTURE)
-		ret = msm_pcm_capture_copy(substream, a, hwoff, buf, fbytes);
+		ret = msm_pcm_capture_copy(substream, a, hwoff, iter, fbytes);
 
 	return ret;
 }
@@ -1616,7 +1611,7 @@ static int voip_get_media_type(uint32_t mode, uint32_t rate_type,
 
 static const struct snd_pcm_ops msm_pcm_ops = {
 	.open           = msm_pcm_open,
-	.copy_user	= msm_pcm_copy,
+	.copy		= msm_pcm_copy,
 	.hw_params	= msm_pcm_hw_params,
 	.close          = msm_pcm_close,
 	.prepare        = msm_pcm_prepare,
@@ -1682,10 +1677,9 @@ done:
 	return rc;
 }
 
-static int msm_pcm_remove(struct platform_device *pdev)
+static void msm_pcm_remove(struct platform_device *pdev)
 {
 	snd_soc_unregister_component(&pdev->dev);
-	return 0;
 }
 
 static const struct of_device_id msm_voip_dt_match[] = {

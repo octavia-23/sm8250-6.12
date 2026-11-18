@@ -145,10 +145,10 @@ static struct interp_sample_rate int_mix_sample_rate_val[] = {
 static int wsa_macro_hw_params(struct snd_pcm_substream *substream,
 			       struct snd_pcm_hw_params *params,
 			       struct snd_soc_dai *dai);
-static int wsa_macro_get_channel_map(struct snd_soc_dai *dai,
+static int wsa_macro_get_channel_map(const struct snd_soc_dai *dai,
 				unsigned int *tx_num, unsigned int *tx_slot,
 				unsigned int *rx_num, unsigned int *rx_slot);
-static int wsa_macro_digital_mute(struct snd_soc_dai *dai, int mute);
+static int wsa_macro_digital_mute(struct snd_soc_dai *dai, int mute, int direction);
 /* Hold instance to soundwire platform device */
 struct wsa_macro_swr_ctrl_data {
 	struct platform_device *wsa_swr_pdev;
@@ -380,7 +380,7 @@ static const struct snd_kcontrol_new rx_mix_ec1_mux =
 static struct snd_soc_dai_ops wsa_macro_dai_ops = {
 	.hw_params = wsa_macro_hw_params,
 	.get_channel_map = wsa_macro_get_channel_map,
-	.digital_mute = wsa_macro_digital_mute,
+	.mute_stream = wsa_macro_digital_mute,
 };
 
 static struct snd_soc_dai_driver wsa_macro_dai[] = {
@@ -776,13 +776,14 @@ static int wsa_macro_hw_params(struct snd_pcm_substream *substream,
 	case SNDRV_PCM_STREAM_CAPTURE:
 		if (dai->id == WSA_MACRO_AIF_VI)
 			wsa_priv->pcm_rate_vi = params_rate(params);
+		break;
 	default:
 		break;
 	}
 	return 0;
 }
 
-static int wsa_macro_get_channel_map(struct snd_soc_dai *dai,
+static int wsa_macro_get_channel_map(const struct snd_soc_dai *dai,
 				unsigned int *tx_num, unsigned int *tx_slot,
 				unsigned int *rx_num, unsigned int *rx_slot)
 {
@@ -837,7 +838,7 @@ static int wsa_macro_get_channel_map(struct snd_soc_dai *dai,
 	return 0;
 }
 
-static int wsa_macro_digital_mute(struct snd_soc_dai *dai, int mute)
+static int wsa_macro_digital_mute(struct snd_soc_dai *dai, int mute, int direction)
 {
 	struct snd_soc_component *component = dai->component;
 	struct device *wsa_dev = NULL;
@@ -3253,7 +3254,7 @@ reg_macro_fail:
 	return ret;
 }
 
-static int wsa_macro_remove(struct platform_device *pdev)
+static void wsa_macro_remove(struct platform_device *pdev)
 {
 	struct wsa_macro_priv *wsa_priv;
 	u16 count = 0;
@@ -3261,7 +3262,7 @@ static int wsa_macro_remove(struct platform_device *pdev)
 	wsa_priv = dev_get_drvdata(&pdev->dev);
 
 	if (!wsa_priv)
-		return -EINVAL;
+		return;
 
 	for (count = 0; count < wsa_priv->child_count &&
 		count < WSA_MACRO_CHILD_DEVICES_MAX; count++)
@@ -3272,7 +3273,6 @@ static int wsa_macro_remove(struct platform_device *pdev)
 	bolero_unregister_macro(&pdev->dev, WSA_MACRO);
 	mutex_destroy(&wsa_priv->mclk_lock);
 	mutex_destroy(&wsa_priv->swr_clk_lock);
-	return 0;
 }
 
 static const struct of_device_id wsa_macro_dt_match[] = {

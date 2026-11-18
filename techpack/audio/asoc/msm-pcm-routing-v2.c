@@ -1280,7 +1280,7 @@ static int msm_routing_get_adm_topology(int fedai_id, int session_type,
 	pr_debug("%s: fedai_id %d, session_type %d, be_id %d\n",
 	       __func__, fedai_id, session_type, be_id);
 
-	if (cal_data == NULL)
+	if (!cal_data[ADM_TOPOLOGY_CAL_TYPE_IDX])
 		goto done;
 
 	app_type = fe_dai_app_type_cfg[fedai_id][session_type][be_id].app_type;
@@ -31757,10 +31757,9 @@ static int msm_routing_pcm_probe(struct platform_device *pdev)
 				NULL, 0);
 }
 
-static int msm_routing_pcm_remove(struct platform_device *pdev)
+static void msm_routing_pcm_remove(struct platform_device *pdev)
 {
 	snd_soc_unregister_component(&pdev->dev);
-	return 0;
 }
 
 static const struct of_device_id msm_pcm_routing_dt_match[] = {

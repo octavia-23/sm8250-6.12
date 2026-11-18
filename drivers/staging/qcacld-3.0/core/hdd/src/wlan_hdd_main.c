@@ -1006,6 +1006,7 @@ static int __hdd_netdev_notifier_call(struct net_device *net_dev,
 	case NETDEV_FEAT_CHANGE:
 		hdd_debug("vdev %d netdev Feature 0x%llx\n",
 			  adapter->vdev_id, net_dev->features);
+		break;
 
 	default:
 		break;
@@ -3662,6 +3663,7 @@ int hdd_wlan_start_modules(struct hdd_context *hdd_ctx, bool reinit)
 		hdd_nofl_debug("Wlan transitioning (UNINITIALIZED -> CLOSED)");
 		unint = true;
 		/* Fall through dont add break here */
+		fallthrough;
 	case DRIVER_MODULES_CLOSED:
 		hdd_nofl_debug("Wlan transitioning (CLOSED -> ENABLED)");
 
@@ -4372,7 +4374,7 @@ static int __hdd_set_mac_address(struct net_device *dev, void *addr)
 
 	hdd_update_dynamic_mac(hdd_ctx, &adapter->mac_addr, &mac_addr);
 	memcpy(&adapter->mac_addr, psta_mac_addr->sa_data, ETH_ALEN);
-	memcpy(dev->dev_addr, psta_mac_addr->sa_data, ETH_ALEN);
+	eth_hw_addr_set(dev, psta_mac_addr->sa_data);
 
 	hdd_exit();
 	return qdf_ret_status;
@@ -4995,7 +4997,7 @@ hdd_alloc_station_adapter(struct hdd_context *hdd_ctx, tSirMacAddr mac_addr,
 	/* Init the net_device structure */
 	strlcpy(dev->name, name, IFNAMSIZ);
 
-	qdf_mem_copy(dev->dev_addr, mac_addr, sizeof(tSirMacAddr));
+	eth_hw_addr_set(dev, mac_addr);
 	qdf_mem_copy(adapter->mac_addr.bytes, mac_addr, sizeof(tSirMacAddr));
 	dev->watchdog_timeo = HDD_TX_TIMEOUT;
 
@@ -6314,6 +6316,7 @@ struct hdd_adapter *hdd_open_adapter(struct hdd_context *hdd_ctx, uint8_t sessio
 		}
 
 	/* fall through */
+	fallthrough;
 	case QDF_P2P_CLIENT_MODE:
 	case QDF_P2P_DEVICE_MODE:
 	case QDF_OCB_MODE:
@@ -6894,6 +6897,7 @@ QDF_STATUS hdd_stop_adapter(struct hdd_context *hdd_ctx,
 		wlansap_cleanup_cac_timer(sap_ctx);
 
 		/* fallthrough */
+		fallthrough;
 
 	case QDF_P2P_GO_MODE:
 		cds_flush_work(&adapter->sap_stop_bss_work);
@@ -7646,16 +7650,18 @@ static void hdd_connect_done(struct net_device *dev, const u8 *bssid,
 
 	if (!roam_fils_params) {
 		fils_params.status = WLAN_STATUS_UNSPECIFIED_FAILURE;
+		fils_params.links[0].status = WLAN_STATUS_UNSPECIFIED_FAILURE;
 	} else {
 		fils_params.status = status;
-		fils_params.bssid = bssid;
+		fils_params.links[0].status = status;
+		fils_params.links[0].bssid = bssid;
 		fils_params.timeout_reason =
 				hdd_convert_timeout_reason(timeout_reason);
 		fils_params.req_ie = req_ie;
 		fils_params.req_ie_len = req_ie_len;
 		fils_params.resp_ie = resp_ie;
 		fils_params.resp_ie_len = resp_ie_len;
-		fils_params.bss = bss;
+		fils_params.links[0].bss = bss;
 		hdd_populate_fils_params(&fils_params, roam_fils_params->kek,
 					 roam_fils_params->kek_len,
 					 roam_fils_params->fils_pmk,
@@ -8117,6 +8123,7 @@ QDF_STATUS hdd_start_all_adapters(struct hdd_context *hdd_ctx)
 			break;
 		case QDF_NDI_MODE:
 			hdd_ndi_start(adapter->dev->name, 0);
+			break;
 		default:
 			break;
 		}
@@ -8386,7 +8393,7 @@ struct hdd_adapter *hdd_get_adapter_by_rand_macaddr(
 }
 
 struct hdd_adapter *hdd_get_adapter_by_macaddr(struct hdd_context *hdd_ctx,
-					       tSirMacAddr mac_addr)
+					       const uint8_t *mac_addr)
 {
 	struct hdd_adapter *adapter, *next_adapter = NULL;
 	wlan_net_dev_ref_dbgid dbgid = NET_DEV_HOLD_GET_ADAPTER_BY_MACADDR;
@@ -14004,16 +14011,16 @@ void hdd_dp_trace_init(struct hdd_config *config)
 	switch (num_entries) {
 	case 4:
 		proto_bitmap = config_params[3];
-		/* fall through */
+		fallthrough;
 	case 3:
 		verbosity = config_params[2];
-		/* fall through */
+		fallthrough;
 	case 2:
 		thresh = config_params[1];
-		/* fall through */
+		fallthrough;
 	case 1:
 		live_mode = config_params[0];
-		/* fall through */
+		fallthrough;
 	default:
 		hdd_debug("live_mode %u thresh %u time_limit %u verbosity %u bitmap 0x%x",
 			  live_mode, thresh, thresh_time_limit,
@@ -15728,7 +15735,7 @@ static int  wlan_hdd_state_ctrl_param_create(void)
 	}
 	wlan_hdd_state_major = MAJOR(device);
 
-	class = class_create(THIS_MODULE, WLAN_MODULE_NAME);
+	class = class_create(WLAN_MODULE_NAME);
 	if (IS_ERR(class)) {
 		pr_err("wlan_hdd_state class_create error");
 		goto class_err;
@@ -16214,7 +16221,7 @@ static void hdd_stop_present_mode(struct hdd_context *hdd_ctx,
 		hdd_info("Release wakelock for monitor mode!");
 		qdf_wake_lock_release(&hdd_ctx->monitor_mode_wakelock,
 				      WIFI_POWER_EVENT_WAKELOCK_MONITOR_MODE);
-		/* fallthrough */
+		fallthrough;
 	case QDF_GLOBAL_MISSION_MODE:
 	case QDF_GLOBAL_FTM_MODE:
 		hdd_abort_mac_scan_all_adapters(hdd_ctx);

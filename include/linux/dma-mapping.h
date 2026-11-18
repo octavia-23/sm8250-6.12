@@ -564,6 +564,10 @@ static inline void *dma_alloc_coherent(struct device *dev, size_t size,
 			(gfp & __GFP_NOWARN) ? DMA_ATTR_NO_WARN : 0);
 }
 
+#ifndef dma_zalloc_coherent
+#define dma_zalloc_coherent(d, s, h, f) dma_alloc_coherent(d, s, h, f)
+#endif
+
 static inline void dma_free_coherent(struct device *dev, size_t size,
 		void *cpu_addr, dma_addr_t dma_handle)
 {

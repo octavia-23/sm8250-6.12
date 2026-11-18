@@ -893,6 +893,32 @@ static struct snd_soc_component *soc_find_component(
 	return NULL;
 }
 
+struct snd_soc_component *soc_find_component_locked(
+	struct device_node *of_node, const char *name)
+{
+	struct snd_soc_dai_link_component dlc = {
+		.of_node = of_node,
+		.name = name,
+	};
+	struct snd_soc_component *component;
+
+	mutex_lock(&client_mutex);
+	component = soc_find_component(&dlc);
+	mutex_unlock(&client_mutex);
+
+	return component;
+}
+EXPORT_SYMBOL_GPL(soc_find_component_locked);
+
+void snd_soc_card_change_online_state(struct snd_soc_card *card, int online)
+{
+	if (!card)
+		return;
+	dev_dbg(card->dev, "ASoC: card %s online state changed to %d\n",
+		card->name, online);
+}
+EXPORT_SYMBOL_GPL(snd_soc_card_change_online_state);
+
 /**
  * snd_soc_find_dai - Find a registered DAI
  *
@@ -1199,6 +1225,8 @@ static int snd_soc_add_pcm_runtime(struct snd_soc_card *card,
 				 cpu->dai_name);
 			goto _err_defer;
 		}
+		if (i == 0)
+			rtd->cpu_dai = snd_soc_rtd_to_cpu(rtd, 0);
 		snd_soc_rtd_add_component(rtd, snd_soc_rtd_to_cpu(rtd, i)->component);
 	}
 
@@ -1211,6 +1239,8 @@ static int snd_soc_add_pcm_runtime(struct snd_soc_card *card,
 			goto _err_defer;
 		}
 
+		if (i == 0)
+			rtd->codec_dai = snd_soc_rtd_to_codec(rtd, 0);
 		snd_soc_rtd_add_component(rtd, snd_soc_rtd_to_codec(rtd, i)->component);
 	}
 
@@ -1239,13 +1269,47 @@ int snd_soc_add_pcm_runtimes(struct snd_soc_card *card,
 			     int num_dai_link)
 {
 	for (int i = 0; i < num_dai_link; i++) {
+		struct snd_soc_dai_link *link = dai_link + i;
 		int ret;
 
-		ret = snd_soc_compensate_channel_connection_map(card, dai_link + i);
+		/* Auto-translate legacy single-component fields to modern component arrays */
+		if (!link->cpus && (link->cpu_dai_name || link->cpu_name || link->cpu_of_node)) {
+			struct snd_soc_dai_link_component *cpu = devm_kzalloc(card->dev, sizeof(*cpu), GFP_KERNEL);
+			if (!cpu)
+				return -ENOMEM;
+			cpu->name = link->cpu_name;
+			cpu->of_node = link->cpu_of_node;
+			cpu->dai_name = link->cpu_dai_name;
+			link->cpus = cpu;
+			link->num_cpus = 1;
+		}
+
+		if (!link->codecs && (link->codec_dai_name || link->codec_name || link->codec_of_node)) {
+			struct snd_soc_dai_link_component *codec = devm_kzalloc(card->dev, sizeof(*codec), GFP_KERNEL);
+			if (!codec)
+				return -ENOMEM;
+			codec->name = link->codec_name;
+			codec->of_node = link->codec_of_node;
+			codec->dai_name = link->codec_dai_name;
+			link->codecs = codec;
+			link->num_codecs = 1;
+		}
+
+		if (!link->platforms && (link->platform_name || link->platform_of_node)) {
+			struct snd_soc_dai_link_component *platform = devm_kzalloc(card->dev, sizeof(*platform), GFP_KERNEL);
+			if (!platform)
+				return -ENOMEM;
+			platform->name = link->platform_name;
+			platform->of_node = link->platform_of_node;
+			link->platforms = platform;
+			link->num_platforms = 1;
+		}
+
+		ret = snd_soc_compensate_channel_connection_map(card, link);
 		if (ret < 0)
 			return ret;
 
-		ret = snd_soc_add_pcm_runtime(card, dai_link + i);
+		ret = snd_soc_add_pcm_runtime(card, link);
 		if (ret < 0)
 			return ret;
 	}

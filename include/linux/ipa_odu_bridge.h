@@ -9,27 +9,8 @@
 #include <linux/types.h>
 #include <linux/skbuff.h>
 #include <linux/netdevice.h>
+#include <linux/msm_ipa.h>
 #include <linux/ipa.h>
-
-#define ODU_BRIDGE_IOC_MAGIC 0xCD
-
-enum odu_bridge_ioctl_cmds {
-	ODU_BRIDGE_IOCTL_SET_MODE = 0,
-	ODU_BRIDGE_IOCTL_SET_LLV6_ADDR,
-	ODU_BRIDGE_IOCTL_MAX,
-};
-
-enum odu_bridge_mode {
-	ODU_BRIDGE_MODE_ROUTER = 0,
-	ODU_BRIDGE_MODE_BRIDGE,
-	ODU_BRIDGE_MODE_MAX,
-};
-
-#define ODU_BRIDGE_IOC_SET_MODE \
-	_IOW(ODU_BRIDGE_IOC_MAGIC, ODU_BRIDGE_IOCTL_SET_MODE, uint32_t)
-
-#define ODU_BRIDGE_IOC_SET_LLV6_ADDR \
-	_IOW(ODU_BRIDGE_IOC_MAGIC, ODU_BRIDGE_IOCTL_SET_LLV6_ADDR, struct in6_addr)
 
 struct odu_bridge_params {
 	const char *netdev_name;
@@ -40,12 +21,26 @@ struct odu_bridge_params {
 	u32 ipa_desc_size;
 };
 
+struct ipa_bridge_init_params {
+	struct odu_bridge_params info;
+	void (*wakeup_request)(void *cl_priv);
+};
+
 #if IS_ENABLED(CONFIG_IPA) || IS_ENABLED(CONFIG_IPA3)
 int odu_bridge_init(struct odu_bridge_params *params);
 int odu_bridge_connect(void);
 int odu_bridge_disconnect(void);
 int odu_bridge_tx_dp(struct sk_buff *skb, struct ipa_tx_meta *metadata);
 int odu_bridge_cleanup(void);
+
+int ipa_bridge_init(struct ipa_bridge_init_params *params, u32 *hdl);
+int ipa_bridge_cleanup(u32 hdl);
+int ipa_bridge_connect(u32 hdl);
+int ipa_bridge_disconnect(u32 hdl);
+int ipa_bridge_resume(u32 hdl);
+int ipa_bridge_suspend(u32 hdl);
+int ipa_bridge_set_perf_profile(u32 hdl, u32 bandwidth);
+int ipa_bridge_tx_dp(u32 hdl, struct sk_buff *skb, struct ipa_tx_meta *metadata);
 #else
 static inline int odu_bridge_init(struct odu_bridge_params *params)
 {
@@ -66,6 +61,38 @@ static inline int odu_bridge_tx_dp(struct sk_buff *skb, struct ipa_tx_meta *meta
 static inline int odu_bridge_cleanup(void)
 {
 	return 0;
+}
+static inline int ipa_bridge_init(struct ipa_bridge_init_params *params, u32 *hdl)
+{
+	return -ENODEV;
+}
+static inline int ipa_bridge_cleanup(u32 hdl)
+{
+	return -ENODEV;
+}
+static inline int ipa_bridge_connect(u32 hdl)
+{
+	return -ENODEV;
+}
+static inline int ipa_bridge_disconnect(u32 hdl)
+{
+	return -ENODEV;
+}
+static inline int ipa_bridge_resume(u32 hdl)
+{
+	return -ENODEV;
+}
+static inline int ipa_bridge_suspend(u32 hdl)
+{
+	return -ENODEV;
+}
+static inline int ipa_bridge_set_perf_profile(u32 hdl, u32 bandwidth)
+{
+	return -ENODEV;
+}
+static inline int ipa_bridge_tx_dp(u32 hdl, struct sk_buff *skb, struct ipa_tx_meta *metadata)
+{
+	return -ENODEV;
 }
 #endif
 

@@ -131,6 +131,21 @@ void snd_info_card_disconnect(struct snd_card *card);
 void snd_info_card_id_change(struct snd_card *card);
 int snd_info_register(struct snd_info_entry *entry);
 
+static inline struct snd_info_entry *snd_info_create_subdir(struct module *module,
+					const char *name,
+					struct snd_info_entry *parent)
+{
+	struct snd_info_entry *entry = snd_info_create_module_entry(module, name, parent);
+	if (entry) {
+		entry->mode = S_IFDIR | 0555;
+		if (snd_info_register(entry) < 0) {
+			snd_info_free_entry(entry);
+			entry = NULL;
+		}
+	}
+	return entry;
+}
+
 /* for card drivers */
 static inline int snd_card_proc_new(struct snd_card *card, const char *name,
 				    struct snd_info_entry **entryp)
@@ -177,6 +192,9 @@ static inline int snd_info_card_free(struct snd_card *card) { return 0; }
 static inline void snd_info_card_disconnect(struct snd_card *card) { }
 static inline void snd_info_card_id_change(struct snd_card *card) { }
 static inline int snd_info_register(struct snd_info_entry *entry) { return 0; }
+static inline struct snd_info_entry *snd_info_create_subdir(struct module *module,
+					const char *name,
+					struct snd_info_entry *parent) { return NULL; }
 
 static inline int snd_card_proc_new(struct snd_card *card, const char *name,
 				    struct snd_info_entry **entryp) { return -EINVAL; }

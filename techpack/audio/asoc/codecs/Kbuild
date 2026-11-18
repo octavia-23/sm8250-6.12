@@ -258,7 +258,6 @@ else ifeq ($(CONFIG_MACH_XIAOMI_MUNCH), y)
 	obj-y	+= tfa9874/
 else
 	obj-y	+= cs35l41/
-	obj-y	+= tfa98xx/
 endif
 	obj-y	+= rouleur/
 	obj-y	+= wsa883x/

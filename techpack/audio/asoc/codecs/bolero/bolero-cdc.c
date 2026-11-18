@@ -1406,18 +1406,17 @@ static int bolero_probe(struct platform_device *pdev)
 	return 0;
 }
 
-static int bolero_remove(struct platform_device *pdev)
+static void bolero_remove(struct platform_device *pdev)
 {
 	struct bolero_priv *priv = dev_get_drvdata(&pdev->dev);
 
 	if (!priv)
-		return -EINVAL;
+		return;
 
 	of_platform_depopulate(&pdev->dev);
 	mutex_destroy(&priv->io_lock);
 	mutex_destroy(&priv->clk_lock);
 	mutex_destroy(&priv->vote_lock);
-	return 0;
 }
 
 #ifdef CONFIG_PM

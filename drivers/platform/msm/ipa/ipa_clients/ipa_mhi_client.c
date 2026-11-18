@@ -470,12 +470,8 @@ static void ipa_mhi_debugfs_init(void)
 		goto fail;
 	}
 
-	file = debugfs_create_u32("use_ipadma", read_write_mode, dent,
+	debugfs_create_u32("use_ipadma", read_write_mode, dent,
 		&ipa_mhi_client_ctx->use_ipadma);
-	if (!file || IS_ERR(file)) {
-		IPA_MHI_ERR("fail to create file use_ipadma\n");
-		goto fail;
-	}
 
 	file = debugfs_create_file("dump_host_channel_ctx_array",
 		read_only_mode, dent, 0, &ipa_mhi_dump_host_ch_ctx_ops);

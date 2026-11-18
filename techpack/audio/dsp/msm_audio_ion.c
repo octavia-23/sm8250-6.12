@@ -14,7 +14,10 @@
 #include <linux/list.h>
 #include <linux/dma-mapping.h>
 #include <linux/dma-buf.h>
+#include <linux/dma-heap.h>
+#include <linux/iosys-map.h>
 #include <linux/platform_device.h>
+#include <linux/of.h>
 #include <linux/of_device.h>
 #include <linux/export.h>
 #include <linux/ion_kernel.h>
@@ -41,6 +44,7 @@ struct msm_audio_ion_private {
 struct msm_audio_alloc_data {
 	size_t len;
 	void *vaddr;
+	struct iosys_map map;
 	struct dma_buf *dma_buf;
 	struct dma_buf_attachment *attach;
 	struct sg_table *table;
@@ -236,6 +240,7 @@ static void *msm_audio_ion_map_kernel(struct dma_buf *dma_buf)
 	int rc = 0;
 	void *addr = NULL;
 	struct msm_audio_alloc_data *alloc_data = NULL;
+	struct iosys_map map;
 
 	rc = dma_buf_begin_cpu_access(dma_buf, DMA_BIDIRECTIONAL);
 	if (rc) {
@@ -243,12 +248,13 @@ static void *msm_audio_ion_map_kernel(struct dma_buf *dma_buf)
 		goto exit;
 	}
 
-	addr = dma_buf_vmap(dma_buf);
-	if (!addr) {
-		pr_err("%s: kernel mapping of dma_buf failed\n",
-		       __func__);
+	rc = dma_buf_vmap(dma_buf, &map);
+	if (rc) {
+		pr_err("%s: kernel mapping of dma_buf failed, rc=%d\n",
+		       __func__, rc);
 		goto exit;
 	}
+	addr = map.vaddr;
 
 	/*
 	 * TBD: remove the below section once new API
@@ -259,6 +265,7 @@ static void *msm_audio_ion_map_kernel(struct dma_buf *dma_buf)
 			    list) {
 		if (alloc_data->dma_buf == dma_buf) {
 			alloc_data->vaddr = addr;
+			alloc_data->map = map;
 			break;
 		}
 	}
@@ -272,9 +279,11 @@ static int msm_audio_ion_unmap_kernel(struct dma_buf *dma_buf)
 {
 	int rc = 0;
 	void *vaddr = NULL;
+	struct iosys_map map;
 	struct msm_audio_alloc_data *alloc_data = NULL;
 	struct device *cb_dev = msm_audio_ion_data.cb_dev;
 
+	memset(&map, 0, sizeof(map));
 	/*
 	 * TBD: remove the below section once new API
 	 * for unmapping kernel virtual address is available.
@@ -283,6 +292,7 @@ static int msm_audio_ion_unmap_kernel(struct dma_buf *dma_buf)
 			    list) {
 		if (alloc_data->dma_buf == dma_buf) {
 			vaddr = alloc_data->vaddr;
+			map = alloc_data->map;
 			break;
 		}
 	}
@@ -295,7 +305,7 @@ static int msm_audio_ion_unmap_kernel(struct dma_buf *dma_buf)
 		goto err;
 	}
 
-	dma_buf_vunmap(dma_buf, vaddr);
+	dma_buf_vunmap(dma_buf, &map);
 
 	rc = dma_buf_end_cpu_access(dma_buf, DMA_BIDIRECTIONAL);
 	if (rc) {
@@ -357,6 +367,27 @@ static u32 msm_audio_ion_get_smmu_sid_mode32(void)
  *
  * Returns 0 on success or error on failure
  */
+static struct dma_buf *audio_ion_alloc_dmabuf(size_t bufsz)
+{
+	struct dma_heap *heap;
+	struct dma_buf *dmabuf = NULL;
+
+	heap = dma_heap_find("system");
+	if (!heap)
+		heap = dma_heap_find("qcom,system");
+	if (!heap)
+		heap = dma_heap_find("cma");
+
+	if (!heap) {
+		pr_err("%s: no suitable dma-heap found\n", __func__);
+		return ERR_PTR(-ENODEV);
+	}
+
+	dmabuf = dma_heap_buffer_alloc(heap, bufsz, O_RDWR, 0);
+	dma_heap_put(heap);
+	return dmabuf;
+}
+
 int msm_audio_ion_alloc(struct dma_buf **dma_buf, size_t bufsz,
 			dma_addr_t *paddr, size_t *plen, void **vaddr)
 {
@@ -372,13 +403,7 @@ int msm_audio_ion_alloc(struct dma_buf **dma_buf, size_t bufsz,
 		return -EINVAL;
 	}
 
-	if (msm_audio_ion_data.smmu_enabled == true) {
-		pr_debug("%s: system heap is used\n", __func__);
-		*dma_buf = ion_alloc(bufsz, ION_HEAP(ION_SYSTEM_HEAP_ID), 0);
-	} else {
-		pr_debug("%s: audio heap is used\n", __func__);
-		*dma_buf = ion_alloc(bufsz, ION_HEAP(ION_AUDIO_HEAP_ID), 0);
-	}
+	*dma_buf = audio_ion_alloc_dmabuf(bufsz);
 	if (IS_ERR_OR_NULL((void *)(*dma_buf))) {
 		if (IS_ERR((void *)(*dma_buf)))
 			err_ion_ptr = PTR_ERR((int *)(*dma_buf));
@@ -798,15 +823,10 @@ exit:
 	return rc;
 }
 
-static int msm_audio_ion_remove(struct platform_device *pdev)
+static void msm_audio_ion_remove(struct platform_device *pdev)
 {
-	struct device *audio_cb_dev;
-
-	audio_cb_dev = msm_audio_ion_data.cb_dev;
-
 	msm_audio_ion_data.smmu_enabled = 0;
 	msm_audio_ion_data.device_status = 0;
-	return 0;
 }
 
 static struct platform_driver msm_audio_ion_driver = {

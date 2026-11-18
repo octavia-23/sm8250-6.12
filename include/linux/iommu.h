@@ -1653,4 +1653,41 @@ static inline void iopf_group_dequeue(struct iopf_group *group)
 {
 }
 #endif /* CONFIG_IOMMU_IOPF */
+
+#ifndef _LINUX_IOMMU_ATTR_COMPAT_H
+#define _LINUX_IOMMU_ATTR_COMPAT_H
+
+enum iommu_attr {
+	DOMAIN_ATTR_GEOMETRY,
+	DOMAIN_ATTR_PAGING,
+	DOMAIN_ATTR_WINDOWS,
+	DOMAIN_ATTR_FSL_PAMU_STASH,
+	DOMAIN_ATTR_FSL_PAMU_ENABLE,
+	DOMAIN_ATTR_FSL_PAMUV1,
+	DOMAIN_ATTR_NESTING,
+	DOMAIN_ATTR_DMA_API,
+	DOMAIN_ATTR_SPLIT_TABLES,
+	DOMAIN_ATTR_PGTBL_INFO,
+	DOMAIN_ATTR_EARLY_MAP,
+	DOMAIN_ATTR_FAST,
+	DOMAIN_ATTR_S1_BYPASS,
+	DOMAIN_ATTR_MAX,
+};
+
+static inline int iommu_domain_get_attr(struct iommu_domain *domain,
+					enum iommu_attr attr, void *data)
+{
+	if (data)
+		*(int *)data = 0;
+	return 0;
+}
+
+static inline int iommu_domain_set_attr(struct iommu_domain *domain,
+					enum iommu_attr attr, void *data)
+{
+	return 0;
+}
+
+#endif /* _LINUX_IOMMU_ATTR_COMPAT_H */
+
 #endif /* __LINUX_IOMMU_H */

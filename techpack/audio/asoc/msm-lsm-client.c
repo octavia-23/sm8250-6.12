@@ -14,6 +14,7 @@
 #include <linux/of.h>
 #include <linux/freezer.h>
 #include <linux/version.h>
+#include <linux/compat.h>
 #include <sound/core.h>
 #include <sound/soc.h>
 #include <sound/soc-dapm.h>
@@ -1810,7 +1811,7 @@ static int msm_lsm_ioctl_compat(struct snd_pcm_substream *substream,
 
 		/* Update size with actual payload size */
 		size = sizeof(userarg32) + user->payload_size;
-		if (!access_ok(VERIFY_WRITE, arg, size)) {
+		if (!access_ok(arg, size)) {
 			dev_err(rtd->dev,
 				"%s: Failed to verify write, size = %d\n",
 				__func__, size);
@@ -1885,7 +1886,7 @@ static int msm_lsm_ioctl_compat(struct snd_pcm_substream *substream,
 
 		/* Update size with actual payload size */
 		size = sizeof(userarg32) + user->payload_size;
-		if (!err && !access_ok(VERIFY_WRITE, arg, size)) {
+		if (!err && !access_ok(arg, size)) {
 			dev_err(rtd->dev,
 				"%s: write verify failed size %d\n",
 				__func__, size);
@@ -2184,7 +2185,7 @@ static int msm_lsm_ioctl_compat(struct snd_pcm_substream *substream,
 			goto done;
 		}
 
-		if (!access_ok(VERIFY_WRITE, arg, size)) {
+		if (!access_ok(arg, size)) {
 			dev_err(rtd->dev,
 				"%s: Failed to verify write, size = %d\n",
 				__func__, size);
@@ -2242,6 +2243,11 @@ static int msm_lsm_ioctl(struct snd_pcm_substream *substream,
 	struct snd_pcm_runtime *runtime;
 	struct snd_soc_pcm_runtime *rtd;
 	struct lsm_priv *prtd;
+
+#ifdef CONFIG_COMPAT
+	if (in_compat_syscall())
+		return msm_lsm_ioctl_compat(substream, cmd, arg);
+#endif
 
 	if (!substream || !substream->private_data) {
 		pr_err("%s: Invalid %s\n", __func__,
@@ -2478,7 +2484,7 @@ static int msm_lsm_ioctl(struct snd_pcm_substream *substream,
 			goto free;
 		}
 
-		if (!access_ok(VERIFY_WRITE, arg, size)) {
+		if (!access_ok(arg, size)) {
 			dev_err(rtd->dev,
 				"%s: Failed to verify write, size = %d\n",
 				__func__, size);
@@ -2556,7 +2562,7 @@ free:
 
 		/* Update size with actual payload size */
 		size = sizeof(*user) + user->payload_size;
-		if (!access_ok(VERIFY_WRITE, arg, size)) {
+		if (!access_ok(arg, size)) {
 			dev_err(rtd->dev,
 				"%s: Failed to verify write, size = %d\n",
 				__func__, size);
@@ -2628,7 +2634,7 @@ free:
 
 		/* Update size with actual payload size */
 		size = sizeof(*user) + user->payload_size;
-		if (!err && !access_ok(VERIFY_WRITE, arg, size)) {
+		if (!err && !access_ok(arg, size)) {
 			dev_err(rtd->dev,
 				"%s: write verify failed size %d\n",
 				__func__, size);
@@ -3083,7 +3089,7 @@ static snd_pcm_uframes_t msm_lsm_pcm_pointer(
 }
 
 static int msm_lsm_pcm_copy(struct snd_pcm_substream *substream, int ch,
-	unsigned long hwoff, void __user *buf, unsigned long fbytes)
+	unsigned long hwoff, struct iov_iter *iter, unsigned long fbytes)
 {
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	struct lsm_priv *prtd = runtime->private_data;
@@ -3131,11 +3137,11 @@ static int msm_lsm_pcm_copy(struct snd_pcm_substream *substream, int ch,
 		"%s: copy the pcm data size %lu\n",
 		__func__, fbytes);
 	if (pcm_buf) {
-		if (copy_to_user(buf, pcm_buf, fbytes)) {
+		if (copy_to_iter(pcm_buf, fbytes, iter) != fbytes) {
 			dev_err(rtd->dev,
 				"%s: failed to copy bytes %lu\n",
 				__func__, fbytes);
-			return -EINVAL;
+			return -EFAULT;
 		}
 	} else {
 		dev_err(rtd->dev,
@@ -3330,9 +3336,8 @@ static const struct snd_pcm_ops msm_lsm_ops = {
 	.close          = msm_lsm_close,
 	.ioctl          = msm_lsm_ioctl,
 	.prepare	= msm_lsm_prepare,
-	.compat_ioctl   = msm_lsm_ioctl_compat,
 	.hw_params      = msm_lsm_hw_params,
-	.copy_user      = msm_lsm_pcm_copy,
+	.copy		= msm_lsm_pcm_copy,
 	.pointer        = msm_lsm_pcm_pointer,
 };
 
@@ -3372,11 +3377,9 @@ static int msm_lsm_probe(struct platform_device *pdev)
 					  NULL, 0);
 }
 
-static int msm_lsm_remove(struct platform_device *pdev)
+static void msm_lsm_remove(struct platform_device *pdev)
 {
 	snd_soc_unregister_component(&pdev->dev);
-
-	return 0;
 }
 
 static const struct of_device_id msm_lsm_client_dt_match[] = {

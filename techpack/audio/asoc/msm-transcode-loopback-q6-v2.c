@@ -1269,7 +1269,7 @@ static int msm_transcode_add_audio_effects_control(struct snd_soc_pcm_runtime *r
 
 	pr_debug("%s: added new compr FE with name %s, id %d, cpu dai %s, device no %d\n", __func__,
 						rtd->dai_link->name, rtd->dai_link->id,
-						rtd->dai_link->cpu_dai_name, rtd->pcm->device);
+						rtd->dai_link->cpus->dai_name, rtd->pcm->device);
 
 	ctl_len = strlen(mixer_ctl_name) + 1 + strlen(deviceNo) + 1;
 	mixer_str = kzalloc(ctl_len, GFP_KERNEL);
@@ -1743,10 +1743,9 @@ static int msm_transcode_dev_probe(struct platform_device *pdev)
 					NULL, 0);
 }
 
-static int msm_transcode_remove(struct platform_device *pdev)
+static void msm_transcode_remove(struct platform_device *pdev)
 {
 	snd_soc_unregister_component(&pdev->dev);
-	return 0;
 }
 
 static const struct of_device_id msm_transcode_loopback_dt_match[] = {

@@ -31,6 +31,11 @@ static inline int subsystem_restart(const char *name)
 	return 0;
 }
 
+static inline int subsystem_restart_dev(struct subsys_device *dev)
+{
+	return 0;
+}
+
 static inline int subsystem_crashed(const char *name)
 {
 	return 0;

@@ -1257,7 +1257,7 @@ static int wdsp_mgr_probe(struct platform_device *pdev)
 	wdsp->ready_status = WDSP_SSR_STATUS_READY;
 	INIT_WORK(&wdsp->ssr_work, wdsp_ssr_work_fn);
 	init_completion(&wdsp->ready_compl);
-	arch_setup_dma_ops(wdsp->mdev, 0, 0, NULL, 0);
+	dma_coerce_mask_and_coherent(wdsp->mdev, DMA_BIT_MASK(32));
 	dev_set_drvdata(mdev, wdsp);
 
 	ret = component_master_add_with_match(mdev, &wdsp_master_ops,
@@ -1280,7 +1280,7 @@ err_dt_parse:
 	return ret;
 }
 
-static int wdsp_mgr_remove(struct platform_device *pdev)
+static void wdsp_mgr_remove(struct platform_device *pdev)
 {
 	struct device *mdev = &pdev->dev;
 	struct wdsp_mgr_priv *wdsp = dev_get_drvdata(mdev);
@@ -1292,9 +1292,7 @@ static int wdsp_mgr_remove(struct platform_device *pdev)
 	devm_kfree(mdev, wdsp->seg_list);
 	devm_kfree(mdev, wdsp);
 	dev_set_drvdata(mdev, NULL);
-
-	return 0;
-};
+}
 
 static const struct of_device_id wdsp_mgr_dt_match[] = {
 	{.compatible = "qcom,wcd-dsp-mgr" },

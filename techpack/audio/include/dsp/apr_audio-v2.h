@@ -643,7 +643,7 @@ struct adm_cmd_set_pp_params {
 	 * Use q6core_pack_pp_params to pack the header and data correctly
 	 * depending on Instance ID support.
 	 */
-	u8 param_data[0];
+	u8 param_data[];
 } __packed;
 
 
@@ -786,7 +786,7 @@ struct adm_cmd_rsp_get_pp_params_v5 {
 	struct param_hdr_v1 param_hdr;
 
 	/* The parameter data returned */
-	u32 param_data[0];
+	u32 param_data[];
 } __packed;
 
 /*
@@ -814,7 +814,7 @@ struct adm_cmd_rsp_get_pp_params_v6 {
 	struct param_hdr_v3 param_hdr;
 
 	/* The parameter data returned */
-	u32 param_data[0];
+	u32 param_data[];
 } __packed;
 
 /* Structure for holding soft stepping volume parameters. */
@@ -2044,7 +2044,7 @@ struct afe_port_cmd_set_param_v2 {
 	struct mem_mapping_hdr mem_hdr;
 
 	/* The parameter data to be filled when sent inband */
-	u8 param_data[0];
+	u8 param_data[];
 } __packed;
 
 #define AFE_PORT_CMD_SET_PARAM_V3 0x000100FA
@@ -2071,7 +2071,7 @@ struct afe_port_cmd_set_param_v3 {
 	 * The parameter data to be filled when sent inband.
 	 * Must include param_hdr packed correctly.
 	 */
-	u8 param_data[0];
+	u8 param_data[];
 } __packed;
 
 /* Payload of the #AFE_PARAM_ID_LOOPBACK_GAIN_PER_PATH parameter,
@@ -2226,7 +2226,7 @@ struct afe_port_cmd_event_cfg {
 	 * Each event has the structure of
 	 * afe_port_cmd_mod_evt_cfg_payload.
 	 */
-	uint8_t payload[0];
+	uint8_t payload[];
 };
 
 /** Event registration for a module. */
@@ -5442,7 +5442,7 @@ struct afe_port_cmd_get_param_v2 {
 struct afe_port_cmdrsp_get_param_v2 {
 	u32                  status;
 	struct param_hdr_v1 param_hdr;
-	u8 param_data[0];
+	u8 param_data[];
 } __packed;
 
 #define AFE_PORT_CMD_GET_PARAM_V3 0x000100FB
@@ -5475,7 +5475,7 @@ struct afe_port_cmdrsp_get_param_v3 {
 	struct param_hdr_v3 param_hdr;
 
 	/* The parameter data to be filled when sent inband */
-	u8 param_data[0];
+	u8 param_data[];
 } __packed;
 
 #define AFE_PARAM_ID_LPASS_CORE_SHARED_CLOCK_CONFIG	0x0001028C
@@ -8056,7 +8056,7 @@ struct asm_stream_cmd_open_shared_io {
 	struct asm_multi_channel_pcm_fmt_blk_v3         fmt;
 	struct avs_shared_map_region_payload            map_region_pos_buf;
 	struct avs_shared_map_region_payload            map_region_circ_buf;
-	struct asm_shared_watermark_level watermark[0];
+	struct asm_shared_watermark_level watermark[];
 } __packed;
 
 #define ASM_STREAM_CMD_OPEN_READ_V3                 0x00010DB4
@@ -8436,7 +8436,7 @@ struct asm_stream_cmd_set_pp_params {
 	 * must be pre-packed with parameter header and then copied here. Use
 	 * q6core_pack_pp_params to pack the header and param data correctly.
 	 */
-	u32 param_data[0];
+	u32 param_data[];
 } __packed;
 
 #define ASM_STREAM_CMD_GET_PP_PARAMS_V2		0x00010DA2
@@ -11220,7 +11220,7 @@ struct afe_sp_v4_param_tmax_xmax_logging {
 	/* Number of channels for Rx signal.
 	 */
 
-	 struct afe_sp_v4_channel_tmax_xmax_params ch_tmax_xmax[0];
+	 struct afe_sp_v4_channel_tmax_xmax_params ch_tmax_xmax[];
 } __packed;
 
 #define AFE_MODULE_SPEAKER_PROTECTION_V4_VI     0x000102D3
@@ -11289,7 +11289,7 @@ struct afe_sp_v4_param_th_vi_r0t0_cfg {
 	/* Number of channels for Rx signal.
 	 */
 
-	struct afe_sp_v4_channel_r0t0 ch_r0t0[0];
+	struct afe_sp_v4_channel_r0t0 ch_r0t0[];
 } __packed;
 
 struct afe_sp_v4_param_th_vi_calib_res_cfg {
@@ -11339,7 +11339,7 @@ struct afe_sp_v4_param_th_vi_ftm_cfg {
 	/* Number of channels for Rx signal.
 	 */
 
-	 struct afe_sp_v4_channel_ftm_cfg ch_ftm_cfg[0];
+	 struct afe_sp_v4_channel_ftm_cfg ch_ftm_cfg[];
 } __packed;
 
 struct afe_sp_v4_channel_ftm_params {
@@ -11374,7 +11374,7 @@ struct afe_sp_v4_param_th_vi_ftm_params {
 	/* Number of channels for Rx signal.
 	 */
 
-	 struct afe_sp_v4_channel_ftm_params ch_ftm_params[0];
+	 struct afe_sp_v4_channel_ftm_params ch_ftm_params[];
 } __packed;
 
 struct afe_sp_v4_gen_get_param_resp {
@@ -11404,7 +11404,7 @@ struct afe_sp_v4_param_th_vi_v_vali_cfg {
 	/* Number of channels for Rx signal.
 	 */
 
-	 struct afe_sp_v4_channel_v_vali_cfg ch_v_vali_cfg[0];
+	 struct afe_sp_v4_channel_v_vali_cfg ch_v_vali_cfg[];
 } __packed;
 
 struct afe_sp_v4_channel_v_vali_params {
@@ -11434,7 +11434,7 @@ struct afe_sp_v4_param_th_vi_v_vali_params {
 	/* Number of channels for Rx signal.
 	 */
 
-	 struct afe_sp_v4_channel_v_vali_params ch_v_vali_params[0];
+	 struct afe_sp_v4_channel_v_vali_params ch_v_vali_params[];
 } __packed;
 
 struct afe_sp_v4_param_ex_vi_mode_cfg {
@@ -11468,7 +11468,7 @@ struct afe_sp_v4_param_ex_vi_ftm_cfg {
 	/* Number of channels for Rx signal.
 	 */
 
-	 struct afe_sp_v4_channel_ex_vi_ftm ch_ex_vi_ftm[0];
+	 struct afe_sp_v4_channel_ex_vi_ftm ch_ex_vi_ftm[];
 } __packed;
 
 struct afe_sp_v4_channel_ex_vi_ftm_params {
@@ -11513,7 +11513,7 @@ struct afe_sp_v4_param_ex_vi_ftm_params {
 	/* Number of channels for Rx signal.
 	 */
 
-	 struct afe_sp_v4_channel_ex_vi_ftm_params ch_ex_vi_ftm_params[0];
+	 struct afe_sp_v4_channel_ex_vi_ftm_params ch_ex_vi_ftm_params[];
 } __packed;
 
 struct afe_sp_v4_param_vi_channel_map_cfg {
@@ -11759,7 +11759,7 @@ struct avs_svc_api_info {
 
 struct avcs_fwk_ver_info {
 	struct avcs_get_fwk_version avcs_fwk_version;
-	struct avs_svc_api_info services[0];
+	struct avs_svc_api_info services[];
 } __packed;
 
 /* LSM Specific */
@@ -12476,7 +12476,7 @@ struct afe_svc_cmd_set_param_v1 {
 	struct mem_mapping_hdr mem_hdr;
 
 	/* The parameter data to be filled when sent inband */
-	u32 param_data[0];
+	u32 param_data[];
 } __packed;
 
 struct afe_svc_cmd_set_param_v2 {
@@ -12490,7 +12490,7 @@ struct afe_svc_cmd_set_param_v2 {
 	u32 payload_size;
 
 	/* The parameter data to be filled when sent inband */
-	u32 param_data[0];
+	u32 param_data[];
 } __packed;
 
 struct afe_param_hw_mad_ctrl {

@@ -86,7 +86,7 @@ static void msm_pcm_route_event_handler(enum msm_pcm_routing_event event,
 		q6asm_cmd(pcm->audio_client, CMD_PAUSE);
 		q6asm_cmd(pcm->audio_client, CMD_FLUSH);
 		q6asm_run(pcm->audio_client, 0, 0, 0);
-		/* fallthrough */
+		fallthrough;
 	default:
 		pr_err("%s: default event 0x%x\n", __func__, event);
 		break;
@@ -1523,7 +1523,7 @@ static int msm_pcm_probe(struct platform_device *pdev)
 				NULL, 0);
 }
 
-static int msm_pcm_remove(struct platform_device *pdev)
+static void msm_pcm_remove(struct platform_device *pdev)
 {
 	struct msm_pcm_pdata *pdata;
 	int i = 0;
@@ -1537,7 +1537,6 @@ static int msm_pcm_remove(struct platform_device *pdev)
 	}
 	kfree(pdata);
 	snd_soc_unregister_component(&pdev->dev);
-	return 0;
 }
 
 static const struct of_device_id msm_pcm_loopback_dt_match[] = {

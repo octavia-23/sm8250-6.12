@@ -29,6 +29,11 @@ static inline void clear_itimer(void) {}
 
 extern long do_utimes(int dfd, const char __user *filename, struct timespec64 *times, int flags);
 
+struct timeval {
+	long		tv_sec;
+	long		tv_usec;
+};
+
 /*
  * Similar to the struct tm in userspace <time.h>, but it needs to be here so
  * that the kernel source is self contained.

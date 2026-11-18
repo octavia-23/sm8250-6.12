@@ -15,6 +15,8 @@
 #include <linux/dma-buf.h>
 #include <linux/iommu.h>
 #include <linux/platform_device.h>
+#include <linux/of.h>
+#include <linux/of_platform.h>
 #include <linux/of_device.h>
 #include <linux/ion_kernel.h>
 #include <linux/msm_ion.h>
@@ -615,9 +617,9 @@ static int msm_mdf_cb_probe(struct device *dev)
 	return 0;
 }
 
-static int msm_mdf_remove(struct platform_device *pdev)
+static void msm_mdf_remove(struct platform_device *pdev)
 {
-	int rc = 0, i;
+	int i;
 
 	for (i = 0; i < SUBSYS_MAX; i++) {
 		if (!IS_ERR_OR_NULL(mdf_smmu_data[i].cb_dev))
@@ -627,8 +629,6 @@ static int msm_mdf_remove(struct platform_device *pdev)
 		mdf_smmu_data[i].enabled = 0;
 	}
 	mdf_mem_data.device_status = 0;
-
-	return rc;
 }
 
 static int msm_mdf_probe(struct platform_device *pdev)

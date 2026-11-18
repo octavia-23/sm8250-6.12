@@ -485,7 +485,7 @@ static int msm_afe_open(struct snd_pcm_substream *substream)
 
 static int msm_afe_playback_copy(struct snd_pcm_substream *substream,
 				int channel, unsigned long hwoff,
-				void __user *buf, unsigned long fbytes)
+				struct iov_iter *iter, unsigned long fbytes)
 {
 	int ret = 0;
 	struct snd_pcm_runtime *runtime = substream->runtime;
@@ -497,7 +497,7 @@ static int msm_afe_playback_copy(struct snd_pcm_substream *substream,
 		__func__,
 		runtime->control->appl_ptr, runtime->status->hw_ptr, hwbuf);
 
-	if (copy_from_user(hwbuf, buf, fbytes)) {
+	if (copy_from_iter(hwbuf, fbytes, iter) != fbytes) {
 		pr_err("%s :Failed to copy audio from user buffer\n",
 			__func__);
 
@@ -538,7 +538,7 @@ fail:
 
 static int msm_afe_capture_copy(struct snd_pcm_substream *substream,
 				int channel, unsigned long hwoff,
-				void __user *buf, unsigned long fbytes)
+				struct iov_iter *iter, unsigned long fbytes)
 {
 	int ret = 0;
 	struct snd_pcm_runtime *runtime = substream->runtime;
@@ -586,7 +586,7 @@ static int msm_afe_capture_copy(struct snd_pcm_substream *substream,
 			__func__, runtime->control->appl_ptr,
 			runtime->status->hw_ptr, hwbuf);
 
-	if (copy_to_user(buf, hwbuf, fbytes)) {
+	if (copy_to_iter(hwbuf, fbytes, iter) != fbytes) {
 		pr_err("%s: copy to user failed\n", __func__);
 
 		goto fail;
@@ -598,7 +598,7 @@ fail:
 }
 
 static int msm_afe_copy(struct snd_pcm_substream *substream, int channel,
-			unsigned long hwoff, void __user *buf,
+			unsigned long hwoff, struct iov_iter *iter,
 			unsigned long fbytes)
 {
 	struct snd_pcm_runtime *runtime = substream->runtime;
@@ -614,10 +614,10 @@ static int msm_afe_copy(struct snd_pcm_substream *substream, int channel,
 
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
 		ret = msm_afe_playback_copy(substream, channel, hwoff,
-					buf, fbytes);
+					iter, fbytes);
 	else if (substream->stream == SNDRV_PCM_STREAM_CAPTURE)
 		ret = msm_afe_capture_copy(substream, channel, hwoff,
-					buf, fbytes);
+					iter, fbytes);
 	return ret;
 }
 
@@ -837,7 +837,7 @@ static snd_pcm_uframes_t msm_afe_pointer(struct snd_pcm_substream *substream)
 
 static const struct snd_pcm_ops msm_afe_ops = {
 	.open           = msm_afe_open,
-	.copy_user      = msm_afe_copy,
+	.copy		= msm_afe_copy,
 	.hw_params	= msm_afe_hw_params,
 	.trigger	= msm_afe_trigger,
 	.close          = msm_afe_close,
@@ -879,11 +879,10 @@ static int msm_afe_probe(struct platform_device *pdev)
 				   &msm_soc_component, NULL, 0);
 }
 
-static int msm_afe_remove(struct platform_device *pdev)
+static void msm_afe_remove(struct platform_device *pdev)
 {
 	pr_debug("%s\n", __func__);
 	snd_soc_unregister_component(&pdev->dev);
-	return 0;
 }
 static const struct of_device_id msm_pcm_afe_dt_match[] = {
 	{.compatible = "qcom,msm-pcm-afe"},

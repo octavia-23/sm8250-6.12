@@ -467,6 +467,8 @@ int snd_soc_dai_compress_new(struct snd_soc_dai *dai,
 	if (dai->driver->ops &&
 	    dai->driver->ops->compress_new)
 		ret = dai->driver->ops->compress_new(rtd, num);
+	else if (dai->driver->compress_new)
+		ret = dai->driver->compress_new(rtd, num);
 	return soc_dai_ret(dai, ret);
 }
 
@@ -526,6 +528,12 @@ int snd_soc_pcm_dai_probe(struct snd_soc_pcm_runtime *rtd, int order)
 					return soc_dai_ret(dai, ret);
 			}
 		}
+		if (dai->driver->probe) {
+			int ret = dai->driver->probe(dai);
+
+			if (ret < 0)
+				return soc_dai_ret(dai, ret);
+		}
 		dai->probed = 1;
 	}
 
@@ -550,6 +558,11 @@ int snd_soc_pcm_dai_remove(struct snd_soc_pcm_runtime *rtd, int order)
 				if (r < 0)
 					ret = r; /* use last error */
 			}
+		}
+		if (dai->driver->remove) {
+			r = dai->driver->remove(dai);
+			if (r < 0)
+				ret = r;
 		}
 		dai->probed = 0;
 	}

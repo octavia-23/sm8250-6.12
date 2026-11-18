@@ -81,7 +81,7 @@ static void hif_init_rx_thread_napi(struct qca_napi_info *napii)
 {
 	init_dummy_netdev(&napii->rx_thread_netdev);
 	netif_napi_add(&napii->rx_thread_netdev, &napii->rx_thread_napi,
-		       hif_rxthread_napi_poll, 64);
+		       hif_rxthread_napi_poll);
 	napi_enable(&napii->rx_thread_napi);
 }
 
@@ -206,7 +206,7 @@ int hif_napi_create(struct hif_opaque_softc   *hif_ctx,
 
 		NAPI_DEBUG("adding napi=%pK to netdev=%pK (poll=%pK, bdgt=%d)",
 			   &(napii->napi), &(napii->netdev), poll, budget);
-		netif_napi_add(&(napii->netdev), &(napii->napi), poll, budget);
+		netif_napi_add(&(napii->netdev), &(napii->napi), poll);
 
 		NAPI_DEBUG("after napi_add");
 		NAPI_DEBUG("napi=0x%pK, netdev=0x%pK",

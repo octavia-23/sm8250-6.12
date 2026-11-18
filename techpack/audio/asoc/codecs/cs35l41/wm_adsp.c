@@ -37,7 +37,7 @@
 #include "wm_adsp.h"
 
 #include "cs35l41.h"
-#include "sound/cs35l41.h"
+#include <uapi/sound/cs35l41.h>
 
 #define adsp_crit(_dsp, fmt, ...)                                              \
 	dev_crit(_dsp->dev, "%s%d: " fmt, wm_adsp_arch_text(_dsp->type),       \
@@ -888,17 +888,10 @@ static void wm_adsp2_init_debugfs(struct wm_adsp *dsp,
 	if (!root)
 		goto err;
 
-	if (!debugfs_create_bool("booted", 0444, root, &dsp->booted))
-		goto err;
-
-	if (!debugfs_create_bool("running", 0444, root, &dsp->running))
-		goto err;
-
-	if (!debugfs_create_x32("fw_id", 0444, root, &dsp->fw_id))
-		goto err;
-
-	if (!debugfs_create_x32("fw_version", 0444, root, &dsp->fw_id_version))
-		goto err;
+	debugfs_create_bool("booted", 0444, root, &dsp->booted);
+	debugfs_create_bool("running", 0444, root, &dsp->running);
+	debugfs_create_x32("fw_id", 0444, root, &dsp->fw_id);
+	debugfs_create_x32("fw_version", 0444, root, &dsp->fw_id_version);
 
 	for (i = 0; i < ARRAY_SIZE(wm_adsp_debugfs_fops); ++i) {
 		if (!debugfs_create_file(wm_adsp_debugfs_fops[i].name, 0444,
@@ -3288,11 +3281,11 @@ static int wm_adsp_load_coeff(struct wm_adsp *dsp)
 			break;
 		case WMFW_HALO_PM_PACKED:
 			burst_multiple += 8; /* plus the 8 below yields 20 */
-			/* fall through */
+			fallthrough;
 		case WMFW_HALO_XM_PACKED:
 		case WMFW_HALO_YM_PACKED:
 			burst_multiple += 8; /* yields 12 */
-			/* fall through */
+			fallthrough;
 		case WMFW_ADSP1_DM:
 		case WMFW_ADSP1_ZM:
 		case WMFW_ADSP2_XM:
@@ -3903,7 +3896,6 @@ static void wm_adsp2_set_dspclk(struct wm_adsp *dsp, unsigned int freq)
 		break;
 	}
 }
-EXPORT_SYMBOL_GPL(wm_adsp2_set_dspclk);
 
 int wm_adsp2_preloader_get(struct snd_kcontrol *kcontrol,
 			   struct snd_ctl_elem_value *ucontrol)

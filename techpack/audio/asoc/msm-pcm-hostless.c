@@ -6,6 +6,7 @@
 #include <linux/module.h>
 #include <linux/platform_device.h>
 #include <linux/of_device.h>
+#include <linux/pm_qos.h>
 #include <sound/core.h>
 #include <sound/soc.h>
 #include <sound/pcm.h>
@@ -18,7 +19,8 @@ static int msm_pcm_hostless_prepare(struct snd_pcm_substream *substream)
 		pr_err("%s: invalid params\n", __func__);
 		return -EINVAL;
 	}
-	pm_qos_remove_request(&substream->latency_pm_qos_req);
+	if (cpu_latency_qos_request_active(&substream->latency_pm_qos_req))
+		cpu_latency_qos_remove_request(&substream->latency_pm_qos_req);
 	return 0;
 }
 
@@ -40,10 +42,9 @@ static int msm_pcm_hostless_probe(struct platform_device *pdev)
 				NULL, 0);
 }
 
-static int msm_pcm_hostless_remove(struct platform_device *pdev)
+static void msm_pcm_hostless_remove(struct platform_device *pdev)
 {
 	snd_soc_unregister_component(&pdev->dev);
-	return 0;
 }
 
 static const struct of_device_id msm_pcm_hostless_dt_match[] = {

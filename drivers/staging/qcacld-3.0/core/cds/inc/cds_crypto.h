@@ -27,6 +27,7 @@
  */
 
 #include <linux/crypto.h>
+#include <crypto/internal/cipher.h>
 
 static inline struct crypto_cipher *
 cds_crypto_alloc_cipher(const char *alg_name, u32 type, u32 mask)

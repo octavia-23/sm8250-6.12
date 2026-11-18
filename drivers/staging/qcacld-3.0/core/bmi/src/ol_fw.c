@@ -1033,6 +1033,7 @@ static QDF_STATUS ol_fw_populate_clk_settings(enum a_refclk_speed_t refclk,
 		clock_s->wlan_pll.outdiv = 0;
 		clock_s->pll_settling_time = 1024;
 		clock_s->refclk_hz = 0;
+		return QDF_STATUS_SUCCESS;
 	default:
 		return QDF_STATUS_E_FAILURE;
 	}
@@ -1708,6 +1709,7 @@ void ol_dump_target_memory(struct hif_opaque_softc *scn, void *memory_block)
 		case 1:
 			address = AXI_LOCATION;
 			size = AXI_SIZE;
+			break;
 		default:
 			break;
 		}

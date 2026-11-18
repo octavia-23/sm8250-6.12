@@ -1094,7 +1094,7 @@ done:
 }
 
 static int msm_pcm_playback_copy(struct snd_pcm_substream *substream, int a,
-				 unsigned long hwoff, void __user *buf,
+				 unsigned long hwoff, struct iov_iter *iter,
 				 unsigned long fbytes)
 {
 	int ret = 0;
@@ -1123,8 +1123,10 @@ static int msm_pcm_playback_copy(struct snd_pcm_substream *substream, int a,
 						struct hpcm_buf_node, list);
 			list_del(&buf_node->list);
 			spin_unlock_irqrestore(&dai_data->dsp_lock, dsp_flags);
-			ret = copy_from_user(&buf_node->frame.voc_pkt, buf,
-					     fbytes);
+			if (copy_from_iter(&buf_node->frame.voc_pkt, fbytes, iter) != fbytes) {
+				pr_err("%s: copy from iter failed\n", __func__);
+				ret = -EFAULT;
+			}
 			buf_node->frame.len = fbytes;
 			spin_lock_irqsave(&dai_data->dsp_lock, dsp_flags);
 			list_add_tail(&buf_node->list, &dai_data->filled_queue);
@@ -1147,7 +1149,7 @@ done:
 
 static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,
 				int channel, unsigned long hwoff,
-				void __user *buf, unsigned long fbytes)
+				struct iov_iter *iter, unsigned long fbytes)
 {
 	int ret = 0;
 	struct hpcm_buf_node *buf_node = NULL;
@@ -1175,11 +1177,9 @@ static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,
 					struct hpcm_buf_node, list);
 			list_del(&buf_node->list);
 			spin_unlock_irqrestore(&dai_data->dsp_lock, dsp_flags);
-			ret = copy_to_user(buf, &buf_node->frame.voc_pkt,
-					   buf_node->frame.len);
-			if (ret) {
-				pr_err("%s: Copy to user returned %d\n",
-					__func__, ret);
+			if (copy_to_iter(&buf_node->frame.voc_pkt, buf_node->frame.len, iter) != buf_node->frame.len) {
+				pr_err("%s: Copy to iter failed\n",
+					__func__);
 				ret = -EFAULT;
 			}
 			spin_lock_irqsave(&dai_data->dsp_lock, dsp_flags);
@@ -1205,17 +1205,17 @@ done:
 }
 
 static int msm_pcm_copy(struct snd_pcm_substream *substream, int channel,
-			unsigned long hwoff, void __user *buf,
+			unsigned long hwoff, struct iov_iter *iter,
 			unsigned long fbytes)
 {
 	int ret = 0;
 
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
 		ret = msm_pcm_playback_copy(substream, channel,
-					    hwoff, buf, fbytes);
+					    hwoff, iter, fbytes);
 	else if (substream->stream == SNDRV_PCM_STREAM_CAPTURE)
 		ret = msm_pcm_capture_copy(substream, channel,
-					   hwoff, buf, fbytes);
+					   hwoff, iter, fbytes);
 
 	return ret;
 }
@@ -1447,7 +1447,7 @@ static const struct snd_pcm_ops msm_pcm_ops = {
 	.prepare        = msm_pcm_prepare,
 	.trigger        = msm_pcm_trigger,
 	.pointer        = msm_pcm_pointer,
-	.copy_user      = msm_pcm_copy,
+	.copy		= msm_pcm_copy,
 	.close          = msm_pcm_close,
 };
 
@@ -1485,10 +1485,9 @@ static int msm_pcm_probe(struct platform_device *pdev)
 					  NULL, 0);
 }
 
-static int msm_pcm_remove(struct platform_device *pdev)
+static void msm_pcm_remove(struct platform_device *pdev)
 {
 	snd_soc_unregister_component(&pdev->dev);
-	return 0;
 }
 
 static const struct of_device_id msm_voice_host_pcm_dt_match[] = {

@@ -2633,3 +2633,100 @@ int snd_pcm_add_chmap_ctls(struct snd_pcm *pcm, int stream,
 	return 0;
 }
 EXPORT_SYMBOL_GPL(snd_pcm_add_chmap_ctls);
+
+static int pcm_usr_ctl_info(struct snd_kcontrol *kcontrol,
+			    struct snd_ctl_elem_info *uinfo)
+{
+	uinfo->type = SNDRV_CTL_ELEM_TYPE_INTEGER;
+	uinfo->count = 1;
+	uinfo->value.integer.min = 0;
+	uinfo->value.integer.max = INT_MAX;
+	return 0;
+}
+
+int snd_pcm_add_usr_ctls(struct snd_pcm *pcm, int stream,
+			 void *private_data, int count, int ctl_len,
+			 int dai_link_id, struct snd_pcm_usr **pusr)
+{
+	struct snd_pcm_usr *info;
+	struct snd_kcontrol_new knew = {
+		.iface = SNDRV_CTL_ELEM_IFACE_MIXER,
+		.name = "default",
+		.info = pcm_usr_ctl_info,
+	};
+	int err;
+
+	info = kzalloc(sizeof(*info), GFP_KERNEL);
+	if (!info)
+		return -ENOMEM;
+	info->pcm = pcm;
+	info->stream = stream;
+	info->private_data = private_data;
+
+	knew.device = pcm->device;
+	knew.private_value = dai_link_id;
+	info->kctl = snd_ctl_new1(&knew, info);
+	if (!info->kctl) {
+		kfree(info);
+		return -ENOMEM;
+	}
+
+	err = snd_ctl_add(pcm->card, info->kctl);
+	if (err < 0) {
+		kfree(info);
+		return err;
+	}
+
+	*pusr = info;
+	return 0;
+}
+EXPORT_SYMBOL_GPL(snd_pcm_add_usr_ctls);
+
+static int pcm_volume_ctl_info(struct snd_kcontrol *kcontrol,
+			       struct snd_ctl_elem_info *uinfo)
+{
+	uinfo->type = SNDRV_CTL_ELEM_TYPE_INTEGER;
+	uinfo->count = 1;
+	uinfo->value.integer.min = 0;
+	uinfo->value.integer.max = 0x2000;
+	return 0;
+}
+
+int snd_pcm_add_volume_ctls(struct snd_pcm *pcm, int stream,
+			    void *private_data, int count,
+			    int dai_link_id, struct snd_pcm_volume **pvol)
+{
+	struct snd_pcm_volume *info;
+	struct snd_kcontrol_new knew = {
+		.iface = SNDRV_CTL_ELEM_IFACE_MIXER,
+		.name = (stream == SNDRV_PCM_STREAM_PLAYBACK) ?
+			"PCM Playback Volume" : "PCM Capture Volume",
+		.info = pcm_volume_ctl_info,
+	};
+	int err;
+
+	info = kzalloc(sizeof(*info), GFP_KERNEL);
+	if (!info)
+		return -ENOMEM;
+	info->pcm = pcm;
+	info->stream = stream;
+	info->private_data = private_data;
+
+	knew.device = pcm->device;
+	knew.private_value = dai_link_id;
+	info->kctl = snd_ctl_new1(&knew, info);
+	if (!info->kctl) {
+		kfree(info);
+		return -ENOMEM;
+	}
+
+	err = snd_ctl_add(pcm->card, info->kctl);
+	if (err < 0) {
+		kfree(info);
+		return err;
+	}
+
+	*pvol = info;
+	return 0;
+}
+EXPORT_SYMBOL_GPL(snd_pcm_add_volume_ctls);

@@ -8723,6 +8723,7 @@ static int __iw_set_host_offload(struct net_device *dev,
 		case WLAN_OFFLOAD_ARP_AND_BC_FILTER_ENABLE:
 			hdd_debug("   BC Filtering enable");
 			/* fallthrough */
+			fallthrough;
 		case WLAN_OFFLOAD_ENABLE:
 			hdd_debug("   ARP offload enable");
 			hdd_debug("   IP address: %pI4",
@@ -9289,7 +9290,7 @@ static int __iw_set_pno(struct net_device *dev,
 		return ret;
 
 	vdev = wlan_objmgr_get_vdev_by_macaddr_from_pdev(hdd_ctx->pdev,
-							 dev->dev_addr,
+							 adapter->mac_addr.bytes,
 							 WLAN_OSIF_ID);
 	if (!vdev) {
 		hdd_err("vdev object is NULL");

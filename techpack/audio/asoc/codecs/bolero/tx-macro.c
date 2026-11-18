@@ -64,7 +64,7 @@ static const DECLARE_TLV_DB_SCALE(digital_gain, 0, 1, 0);
 static int tx_macro_hw_params(struct snd_pcm_substream *substream,
 			       struct snd_pcm_hw_params *params,
 			       struct snd_soc_dai *dai);
-static int tx_macro_get_channel_map(struct snd_soc_dai *dai,
+static int tx_macro_get_channel_map(const struct snd_soc_dai *dai,
 				unsigned int *tx_num, unsigned int *tx_slot,
 				unsigned int *rx_num, unsigned int *rx_slot);
 
@@ -1229,7 +1229,7 @@ static int tx_macro_hw_params(struct snd_pcm_substream *substream,
 	return 0;
 }
 
-static int tx_macro_get_channel_map(struct snd_soc_dai *dai,
+static int tx_macro_get_channel_map(const struct snd_soc_dai *dai,
 				unsigned int *tx_num, unsigned int *tx_slot,
 				unsigned int *rx_num, unsigned int *rx_slot)
 {
@@ -3356,7 +3356,7 @@ err_reg_macro:
 	return ret;
 }
 
-static int tx_macro_remove(struct platform_device *pdev)
+static void tx_macro_remove(struct platform_device *pdev)
 {
 	struct tx_macro_priv *tx_priv = NULL;
 	u16 count = 0;
@@ -3364,7 +3364,7 @@ static int tx_macro_remove(struct platform_device *pdev)
 	tx_priv = platform_get_drvdata(pdev);
 
 	if (!tx_priv)
-		return -EINVAL;
+		return;
 
 	if (tx_priv->is_used_tx_swr_gpio) {
 		if (tx_priv->swr_ctrl_data)
@@ -3381,7 +3381,6 @@ static int tx_macro_remove(struct platform_device *pdev)
 	if (tx_priv->is_used_tx_swr_gpio)
 		mutex_destroy(&tx_priv->swr_clk_lock);
 	bolero_unregister_macro(&pdev->dev, TX_MACRO);
-	return 0;
 }
 
 

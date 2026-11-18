@@ -64,7 +64,7 @@ __qdf_zalloc_auto(const size_t size, const char *func, const uint16_t line)
 		return NULL;
 	}
 
-	qdf_mem_kmalloc_inc(__alloc_size(ptr));
+	qdf_mem_kmalloc_inc(__qdf_ksize(ptr));
 
 	return ptr;
 }
@@ -80,16 +80,16 @@ __qdf_zalloc_atomic(const size_t size, const char *func, const uint16_t line)
 		return NULL;
 	}
 
-	qdf_mem_kmalloc_inc(__alloc_size(ptr));
+	qdf_mem_kmalloc_inc(__qdf_ksize(ptr));
 
 	return ptr;
 }
 
 static void __qdf_free(const void *ptr)
 {
-	qdf_mem_kmalloc_dec(__alloc_size(ptr));
+	qdf_mem_kmalloc_dec(__qdf_ksize(ptr));
 
-	__free(ptr);
+	__qdf_kfree(ptr);
 }
 
 static qdf_ht_declare(__qdf_talloc_meta_ht, QDF_TALLOC_HT_BITS);
@@ -131,7 +131,7 @@ static void qdf_talloc_parent_meta_free(struct qdf_talloc_parent_meta *pmeta)
 
 	qdf_ht_remove(&pmeta->entry);
 	qdf_list_destroy(&pmeta->children);
-	__free(pmeta);
+	__qdf_kfree(pmeta);
 }
 
 static struct qdf_talloc_parent_meta *

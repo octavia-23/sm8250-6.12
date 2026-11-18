@@ -348,6 +348,15 @@ struct platform_device;
 #define SOC_VALUE_ENUM_EXT(xname, xenum, xhandler_get, xhandler_put) \
 	SOC_ENUM_EXT(xname, xenum, xhandler_get, xhandler_put)
 
+#define SOC_SINGLE_MULTI_EXT(xname, xreg, xshift, xmax, xinvert, xcount, \
+	xhandler_get, xhandler_put) \
+{	.iface = SNDRV_CTL_ELEM_IFACE_MIXER, .name = xname, \
+	.info = snd_soc_info_multi_ext, \
+	.get = xhandler_get, .put = xhandler_put, \
+	.private_value = (unsigned long)&(struct soc_multi_mixer_control) \
+		{.reg = xreg, .shift = xshift, .rshift = xshift, \
+		 .max = xmax, .count = xcount, .invert = xinvert} }
+
 #define SND_SOC_BYTES(xname, xbase, xregs)		      \
 {	.iface = SNDRV_CTL_ELEM_IFACE_MIXER, .name = xname,   \
 	.info = snd_soc_bytes_info, .get = snd_soc_bytes_get, \
@@ -549,6 +558,9 @@ struct snd_ac97 *snd_soc_alloc_ac97_component(struct snd_soc_component *componen
 struct snd_ac97 *snd_soc_new_ac97_component(struct snd_soc_component *component,
 	unsigned int id, unsigned int id_mask);
 void snd_soc_free_ac97_component(struct snd_ac97 *ac97);
+struct snd_soc_component *soc_find_component_locked(
+	struct device_node *of_node, const char *name);
+void snd_soc_card_change_online_state(struct snd_soc_card *card, int online);
 
 #ifdef CONFIG_SND_SOC_AC97_BUS
 int snd_soc_set_ac97_ops(struct snd_ac97_bus_ops *ops);
@@ -604,6 +616,8 @@ int snd_soc_put_volsw_sx(struct snd_kcontrol *kcontrol,
 	struct snd_ctl_elem_value *ucontrol);
 int snd_soc_info_volsw_range(struct snd_kcontrol *kcontrol,
 	struct snd_ctl_elem_info *uinfo);
+int snd_soc_info_multi_ext(struct snd_kcontrol *kcontrol,
+	struct snd_ctl_elem_info *uinfo);
 int snd_soc_put_volsw_range(struct snd_kcontrol *kcontrol,
 	struct snd_ctl_elem_value *ucontrol);
 int snd_soc_get_volsw_range(struct snd_kcontrol *kcontrol,
@@ -642,6 +656,7 @@ enum snd_soc_trigger_order {
 /* SoC PCM stream information */
 struct snd_soc_pcm_stream {
 	const char *stream_name;
+	const char *aif_name;
 	u64 formats;			/* SNDRV_PCM_FMTBIT_* */
 	u32 subformats;			/* for S32_LE format, SNDRV_PCM_SUBFMTBIT_* */
 	unsigned int rates;		/* SNDRV_PCM_RATE_* */
@@ -720,6 +735,10 @@ struct snd_soc_dai_link_ch_map {
 	unsigned int codec;
 	unsigned int ch_mask;
 };
+
+#define SND_SOC_DAI_LINK_NO_HOST 1
+#define ASYNC_DPCM_SND_SOC_PREPARE 1
+#define ASYNC_DPCM_SND_SOC_HW_PARAMS 2
 
 struct snd_soc_dai_link {
 	/* config - must be set by machine driver */
@@ -815,6 +834,7 @@ struct snd_soc_dai_link {
 
 	/* This DAI link can route to other DAI links at runtime (Frontend)*/
 	unsigned int dynamic:1;
+	unsigned int dynamic_be:1;
 
 	/* REMOVE ME */
 	/* DPCM capture and Playback support */
@@ -833,6 +853,21 @@ struct snd_soc_dai_link {
 
 	/* Do not create a PCM for this DAI link (Backend link) */
 	unsigned int ignore:1;
+
+	/* Legacy single DAI link definitions / Qualcomm extensions */
+	const char *cpu_name;
+	struct device_node *cpu_of_node;
+	const char *cpu_dai_name;
+
+	const char *codec_name;
+	struct device_node *codec_of_node;
+	const char *codec_dai_name;
+
+	const char *platform_name;
+	struct device_node *platform_of_node;
+
+	unsigned int async_ops;
+	unsigned int no_host_mode;
 
 #ifdef CONFIG_SND_SOC_TOPOLOGY
 	struct snd_soc_dobj dobj; /* For topology */
@@ -977,7 +1012,13 @@ struct snd_soc_codec_conf {
 	 * specify device either by device name, or by
 	 * DT/OF node, but not both.
 	 */
-	struct snd_soc_dai_link_component dlc;
+	union {
+		struct snd_soc_dai_link_component dlc;
+		struct {
+			const char *dev_name;
+			struct device_node *of_node;
+		};
+	};
 
 	/*
 	 * optional map of kcontrol, widget and path name prefixes that are
@@ -991,7 +1032,14 @@ struct snd_soc_aux_dev {
 	 * specify multi-codec either by device name, or by
 	 * DT/OF node, but not both.
 	 */
-	struct snd_soc_dai_link_component dlc;
+	union {
+		struct snd_soc_dai_link_component dlc;
+		struct {
+			const char *name;
+			struct device_node *codec_of_node;
+			const char *codec_name;
+		};
+	};
 
 	/* codec/machine specific init - e.g. add machine controls */
 	int (*init)(struct snd_soc_component *component);
@@ -1196,6 +1244,8 @@ struct snd_soc_pcm_runtime {
 	 *	snd_soc_rtd_to_codec()
 	 */
 	struct snd_soc_dai **dais;
+	struct snd_soc_dai *cpu_dai;
+	struct snd_soc_dai *codec_dai;
 
 	struct delayed_work delayed_work;
 	void (*close_delayed_work_func)(struct snd_soc_pcm_runtime *rtd);
@@ -1275,6 +1325,12 @@ struct soc_mixer_control {
 #endif
 
 	ANDROID_KABI_RESERVE(1);
+};
+
+/* multi register control */
+struct soc_multi_mixer_control {
+	int min, max, platform_max, count;
+	unsigned int reg, rreg, shift, rshift, invert;
 };
 
 struct soc_bytes {

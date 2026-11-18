@@ -141,6 +141,7 @@ bool qcom_scm_lmh_dcvsh_available(void);
 #define QCOM_SCM_GPU_TSENSE_EN_REQ BIT(3)
 
 int qcom_scm_gpu_init_regs(u32 gpu_req);
+int qcom_scm_set_gpu_smmu_aperture(unsigned int context_bank);
 
 int qcom_scm_shm_bridge_enable(void);
 int qcom_scm_shm_bridge_create(struct device *dev, u64 pfn_and_ns_perm_flags,

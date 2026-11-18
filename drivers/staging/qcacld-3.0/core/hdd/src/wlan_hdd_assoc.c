@@ -2419,7 +2419,11 @@ static void hdd_send_roamed_ind(struct net_device *dev,
 {
 	struct cfg80211_roam_info info = {0};
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
+	info.links[0].bss = bss;
+#else
 	info.bss = bss;
+#endif
 	info.req_ie = req_ie;
 	info.req_ie_len = req_ie_len;
 	info.resp_ie = resp_ie;
@@ -4984,6 +4988,7 @@ hdd_sme_roam_callback(void *context, struct csr_roam_info *roam_info,
 					WLAN_CONTROL_PATH);
 			break;
 		}
+		fallthrough;
 	case eCSR_ROAM_DISASSOCIATED:
 	{
 		hdd_debug("****eCSR_ROAM_DISASSOCIATED****");
@@ -5031,7 +5036,7 @@ hdd_sme_roam_callback(void *context, struct csr_roam_info *roam_info,
 		break;
 	case eCSR_ROAM_CANCELLED:
 		hdd_debug("****eCSR_ROAM_CANCELLED****");
-		/* fallthrough */
+		fallthrough;
 	case eCSR_ROAM_ASSOCIATION_FAILURE:
 		qdf_ret_status = hdd_association_completion_handler(adapter,
 								    roam_info,

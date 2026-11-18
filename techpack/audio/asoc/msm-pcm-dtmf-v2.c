@@ -218,7 +218,7 @@ static void dtmf_rx_detected_cb(uint8_t *pkt,
 
 static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,
 				int channel, unsigned long hwoff,
-				void __user *buf, unsigned long fbytes)
+				struct iov_iter *iter, unsigned long fbytes)
 {
 	int ret = 0;
 	struct dtmf_buf_node *buf_node = NULL;
@@ -237,12 +237,9 @@ static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,
 					struct dtmf_buf_node, list);
 			list_del(&buf_node->list);
 			spin_unlock_irqrestore(&prtd->dsp_lock, dsp_flags);
-			ret = copy_to_user(buf,
-					   &buf_node->dtmf_det_pkt,
-					   fbytes);
-			if (ret) {
-				pr_err("%s: Copy to user returned %d\n",
-					__func__, ret);
+			if (copy_to_iter(&buf_node->dtmf_det_pkt, fbytes, iter) != fbytes) {
+				pr_err("%s: Copy to iter failed\n",
+					__func__);
 				ret = -EFAULT;
 			}
 			spin_lock_irqsave(&prtd->dsp_lock, dsp_flags);
@@ -266,14 +263,14 @@ static int msm_pcm_capture_copy(struct snd_pcm_substream *substream,
 }
 
 static int msm_pcm_copy(struct snd_pcm_substream *substream, int a,
-	 unsigned long hwoff, void __user *buf, unsigned long fbytes)
+	 unsigned long hwoff, struct iov_iter *iter, unsigned long fbytes)
 {
 	int ret = 0;
 
 	pr_debug("%s() DTMF\n", __func__);
 
 	if (substream->stream == SNDRV_PCM_STREAM_CAPTURE)
-		ret = msm_pcm_capture_copy(substream, a, hwoff, buf, fbytes);
+		ret = msm_pcm_capture_copy(substream, a, hwoff, iter, fbytes);
 
 	return ret;
 }
@@ -521,7 +518,7 @@ static snd_pcm_uframes_t msm_pcm_pointer(struct snd_pcm_substream *substream)
 
 static const struct snd_pcm_ops msm_pcm_ops = {
 	.open           = msm_pcm_open,
-	.copy_user	= msm_pcm_copy,
+	.copy		= msm_pcm_copy,
 	.hw_params	= msm_pcm_hw_params,
 	.close          = msm_pcm_close,
 	.prepare        = msm_pcm_prepare,
@@ -554,10 +551,9 @@ static int msm_pcm_probe(struct platform_device *pdev)
 					 &msm_soc_component, NULL, 0);
 }
 
-static int msm_pcm_remove(struct platform_device *pdev)
+static void msm_pcm_remove(struct platform_device *pdev)
 {
 	snd_soc_unregister_component(&pdev->dev);
-	return 0;
 }
 
 static const struct of_device_id msm_pcm_dtmf_dt_match[] = {

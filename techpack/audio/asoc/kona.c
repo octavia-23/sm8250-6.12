@@ -13,6 +13,8 @@
 #include <linux/module.h>
 #include <linux/input.h>
 #include <linux/of_device.h>
+#include <linux/of_platform.h>
+#include <linux/pm_qos.h>
 #include <linux/soc/qcom/fsa4480-i2c.h>
 #include <sound/core.h>
 #include <sound/soc.h>
@@ -5177,21 +5179,11 @@ err:
 
 static int msm_fe_qos_prepare(struct snd_pcm_substream *substream)
 {
-	cpumask_t mask;
+	if (cpu_latency_qos_request_active(&substream->latency_pm_qos_req))
+		cpu_latency_qos_remove_request(&substream->latency_pm_qos_req);
 
-	if (pm_qos_request_active(&substream->latency_pm_qos_req))
-		pm_qos_remove_request(&substream->latency_pm_qos_req);
-
-	cpumask_clear(&mask);
-	cpumask_set_cpu(1, &mask); /* affine to core 1 */
-	cpumask_set_cpu(2, &mask); /* affine to core 2 */
-	cpumask_copy(&substream->latency_pm_qos_req.cpus_affine, &mask);
-
-	substream->latency_pm_qos_req.type = PM_QOS_REQ_AFFINE_CORES;
-
-	pm_qos_add_request(&substream->latency_pm_qos_req,
-			  PM_QOS_CPU_DMA_LATENCY,
-			  MSM_LL_QOS_VALUE);
+	cpu_latency_qos_add_request(&substream->latency_pm_qos_req,
+				    MSM_LL_QOS_VALUE);
 	return 0;
 }
 
@@ -7990,28 +7982,25 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 					sizeof(msm_mi2s_be_dai_links));
 				total_links +=
 					ARRAY_SIZE(msm_mi2s_be_dai_links);
-				if (get_hw_version_platform() == HARDWARE_PLATFORM_UMI ||
-				    get_hw_version_platform() == HARDWARE_PLATFORM_CMI ||
-				    get_hw_version_platform() == HARDWARE_PLATFORM_APOLLO ||
-				    get_hw_version_platform() == HARDWARE_PLATFORM_ALIOTH ||
-				    get_hw_version_platform() == HARDWARE_PLATFORM_THYME ||
-				    get_hw_version_platform() == HARDWARE_PLATFORM_ENUMA ||
-				    get_hw_version_platform() == HARDWARE_PLATFORM_ELISH ||
-				    get_hw_version_platform() == HARDWARE_PLATFORM_PSYCHE ||
-				    get_hw_version_platform() == HARDWARE_PLATFORM_DAGU ||
-					get_hw_version_platform() == HARDWARE_PLATFORM_CAS) {
-					memcpy(msm_kona_dai_links + total_links,
-						tert_mi2s_rx_cs35l41_dai_links,
-						sizeof(tert_mi2s_rx_cs35l41_dai_links));
-					total_links += ARRAY_SIZE(tert_mi2s_rx_cs35l41_dai_links);
-					dev_info(dev, "%s: Using tert_mi2s_rx_cs35l41_dai_links\n", __func__);
-				} else if (get_hw_version_platform() == HARDWARE_PLATFORM_LMI ||
-							get_hw_version_platform() == HARDWARE_PLATFORM_MUNCH) {
-					memcpy(msm_kona_dai_links + total_links,
-						pri_mi2s_rx_tfa9874_dai_links,
-						sizeof(pri_mi2s_rx_tfa9874_dai_links));
-					total_links += ARRAY_SIZE(pri_mi2s_rx_tfa9874_dai_links);
-					dev_info(dev, "%s: Using pri_mi2s_rx_tfa9874_dai_links\n", __func__);
+				{
+					struct device_node *amp_node;
+
+					amp_node = of_find_compatible_node(NULL, NULL, "cirrus,cs35l41");
+					if (amp_node) {
+						of_node_put(amp_node);
+						memcpy(msm_kona_dai_links + total_links,
+							tert_mi2s_rx_cs35l41_dai_links,
+							sizeof(tert_mi2s_rx_cs35l41_dai_links));
+						total_links += ARRAY_SIZE(tert_mi2s_rx_cs35l41_dai_links);
+						dev_info(dev, "%s: Using tert_mi2s_rx_cs35l41_dai_links\n", __func__);
+					} else if ((amp_node = of_find_compatible_node(NULL, NULL, "nxp,tfa9874")) != NULL) {
+						of_node_put(amp_node);
+						memcpy(msm_kona_dai_links + total_links,
+							pri_mi2s_rx_tfa9874_dai_links,
+							sizeof(pri_mi2s_rx_tfa9874_dai_links));
+						total_links += ARRAY_SIZE(pri_mi2s_rx_tfa9874_dai_links);
+						dev_info(dev, "%s: Using pri_mi2s_rx_tfa9874_dai_links\n", __func__);
+					}
 				}
 			}
 		}
@@ -8888,15 +8877,13 @@ err:
 	return ret;
 }
 
-static int msm_asoc_machine_remove(struct platform_device *pdev)
+static void msm_asoc_machine_remove(struct platform_device *pdev)
 {
 	struct snd_soc_card *card = platform_get_drvdata(pdev);
 
 	snd_event_master_deregister(&pdev->dev);
 	snd_soc_unregister_card(card);
 	msm_i2s_auxpcm_deinit();
-
-	return 0;
 }
 
 static struct platform_driver kona_asoc_machine_driver = {

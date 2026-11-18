@@ -221,16 +221,28 @@ QDF_STATUS hdd_set_sap_ht2040_mode(struct hdd_adapter *adapter,
 				   uint8_t channel_type);
 #endif
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 0, 0))
+int wlan_hdd_cfg80211_stop_ap(struct wiphy *wiphy,
+			      struct net_device *dev,
+			      unsigned int link_id);
+#else
 int wlan_hdd_cfg80211_stop_ap(struct wiphy *wiphy,
 			      struct net_device *dev);
+#endif
 
 int wlan_hdd_cfg80211_start_ap(struct wiphy *wiphy,
 			       struct net_device *dev,
 			       struct cfg80211_ap_settings *params);
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 7, 0))
+int wlan_hdd_cfg80211_change_beacon(struct wiphy *wiphy,
+				    struct net_device *dev,
+				    struct cfg80211_ap_update *params);
+#else
 int wlan_hdd_cfg80211_change_beacon(struct wiphy *wiphy,
 				    struct net_device *dev,
 				    struct cfg80211_beacon_data *params);
+#endif
 
 /**
  * hdd_is_peer_associated - is peer connected to softap
