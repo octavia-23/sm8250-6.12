@@ -18,6 +18,7 @@
 
 #include <linux/dma-mapping.h>
 #include <linux/dma-buf.h>
+#include <linux/iosys-map.h>
 #include <linux/msm_ion.h>
 #include <drm/drm_crtc.h>
 #include <drm/drm_crtc_helper.h>
@@ -194,13 +195,17 @@ static int msm_framebuffer_kmap(struct drm_framebuffer *fb)
 		return 0;
 
 	for (i = 0; i < n; i++) {
+		struct iosys_map map;
+		int ret;
+
 		bo = msm_framebuffer_bo(fb, i);
 		if (!bo || !bo->dma_buf) {
 			msm_fb->vaddr[i] = NULL;
 			continue;
 		}
 		dma_buf_begin_cpu_access(bo->dma_buf, DMA_BIDIRECTIONAL);
-		msm_fb->vaddr[i] = dma_buf_kmap(bo->dma_buf, 0);
+		ret = dma_buf_vmap(bo->dma_buf, &map);
+		msm_fb->vaddr[i] = !ret ? map.vaddr : NULL;
 		DRM_INFO("FB[%u]: vaddr[%d]:%ux%u:0x%llx\n", fb->base.id, i,
 				fb->width, fb->height, (u64) msm_fb->vaddr[i]);
 	}
@@ -229,7 +234,9 @@ static void msm_framebuffer_kunmap(struct drm_framebuffer *fb)
 		if (!bo || !msm_fb->vaddr[i])
 			continue;
 		if (bo->dma_buf) {
-			dma_buf_kunmap(bo->dma_buf, 0, msm_fb->vaddr[i]);
+			struct iosys_map map = IOSYS_MAP_INIT_VADDR(msm_fb->vaddr[i]);
+
+			dma_buf_vunmap(bo->dma_buf, &map);
 			dma_buf_end_cpu_access(bo->dma_buf, DMA_BIDIRECTIONAL);
 		}
 		msm_fb->vaddr[i] = NULL;

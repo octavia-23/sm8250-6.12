@@ -1835,12 +1835,12 @@ static const struct drm_ioctl_desc msm_ioctls[] = {
 	DRM_IOCTL_DEF_DRV(MSM_GEM_CPU_PREP, msm_ioctl_gem_cpu_prep, DRM_AUTH|DRM_RENDER_ALLOW),
 	DRM_IOCTL_DEF_DRV(MSM_GEM_CPU_FINI, msm_ioctl_gem_cpu_fini, DRM_AUTH|DRM_RENDER_ALLOW),
 	DRM_IOCTL_DEF_DRV(MSM_GEM_MADVISE,  msm_ioctl_gem_madvise,  DRM_AUTH|DRM_RENDER_ALLOW),
-	DRM_IOCTL_DEF_DRV(SDE_WB_CONFIG, sde_wb_config, DRM_UNLOCKED|DRM_AUTH),
+	DRM_IOCTL_DEF_DRV(SDE_WB_CONFIG, sde_wb_config, DRM_AUTH),
 	DRM_IOCTL_DEF_DRV(MSM_REGISTER_EVENT,  msm_ioctl_register_event,
-			  DRM_UNLOCKED),
+			  0),
 	DRM_IOCTL_DEF_DRV(MSM_DEREGISTER_EVENT,  msm_ioctl_deregister_event,
-			  DRM_UNLOCKED),
-	DRM_IOCTL_DEF_DRV(MSM_RMFB2, msm_ioctl_rmfb2, DRM_UNLOCKED),
+			  0),
+	DRM_IOCTL_DEF_DRV(MSM_RMFB2, msm_ioctl_rmfb2, 0),
 	DRM_IOCTL_DEF_DRV(MSM_POWER_CTRL, msm_ioctl_power_ctrl,
 			DRM_RENDER_ALLOW),
 };
@@ -1859,7 +1859,7 @@ static const struct file_operations fops = {
 	.compat_ioctl       = drm_compat_ioctl,
 	.poll               = drm_poll,
 	.read               = drm_read,
-	.llseek             = no_llseek,
+	.llseek             = noop_llseek,
 	.mmap               = msm_gem_mmap,
 };
 
@@ -1869,7 +1869,6 @@ static struct drm_driver msm_driver = {
 				DRIVER_MODESET,
 	.open               = msm_open,
 	.postclose          = msm_postclose,
-	.lastclose          = msm_lastclose,
 	.dumb_create        = msm_gem_dumb_create,
 	.dumb_map_offset    = msm_gem_dumb_map_offset,
 	.prime_handle_to_fd = drm_gem_prime_handle_to_fd,
